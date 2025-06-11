@@ -21,7 +21,7 @@ Un sistema completo per la gestione delle registrazioni ai viaggi organizzati co
 
 1. **Clona o scarica il progetto**
    ```bash
-   cd maeviaggi
+   git clone https://github.com/dadapera/event-registration-form-suite.git
    ```
 
 2. **Installa le dipendenze**
