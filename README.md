@@ -1,4 +1,4 @@
-# Maeviaggi - Sistema di Registrazione per Eventi di Viaggio
+# Sistema di Registrazione per Eventi di Viaggio
 
 Un sistema completo per la gestione delle registrazioni ai viaggi organizzati con calcolo dinamico dei prezzi, tracciamento dettagliato degli accompagnatori ed esportazione CSV.
 
