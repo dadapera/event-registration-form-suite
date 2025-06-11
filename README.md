@@ -227,7 +227,7 @@ Nel file `public/index.html`, modifica la funzione `updateGuestFields()` per agg
 2. **Usa un process manager**:
    ```bash
    npm install -g pm2
-   pm2 start server.js --name "maeviaggi"
+   pm2 start server.js --name "event-form"
    ```
 
 3. **Backup automatico del database**:
