@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crociera sui Fiordi - Modulo Iscrizione</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <div class="max-w-4xl mx-auto p-6 bg-white shadow-md mt-10 rounded-lg">
+    <!-- Logos Section -->
+    <div class="flex justify-center items-center space-x-8 mb-6">
+      <img src="assets/msc-logo.jpg" alt="MSC Logo" class="h-16 w-auto object-contain">
+      <img src="assets/mae-logo.png" alt="Mae Logo" class="h-16 w-auto object-contain">
+      <img src="assets/lafenice-logo.jpg" alt="La Fenice Logo" class="h-16 w-auto object-contain">
+    </div>
+    
+    <h1 class="text-3xl font-bold text-center mb-4">CROCIERA SUI FIORDI</h1>
+    <p class="text-center mb-6">sabato 12 Luglio - sabato 19 Luglio 2025</p>
+    
+    <form id="registrationForm" class="space-y-6">
+      <section>
+        <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Capogruppo</h2>
+        <p class="text-sm text-red-600 mb-3">I campi contrassegnati con * sono obbligatori</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Nome *</label>
+            <input type="text" name="nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Cognome *</label>
+            <input type="text" name="cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label>
+            <input type="date" name="data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="calculateTotal()">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label>
+            <input type="text" name="codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" title="Formato: RSSMRA80A01H501X" oninput="this.value = this.value.toUpperCase()">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Email *</label>
+            <input type="email" name="email" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Cellulare *</label>
+            <input type="tel" name="cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+
+          <!-- New Separated Address Fields for Capogruppo -->
+          <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo di Residenza *</div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+            <input type="text" name="via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <!-- Combined CAP, Città, Provincia for Capogruppo -->
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">CAP *</label>
+              <input type="text" name="cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Città *</label>
+              <input type="text" name="citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div>
+              <label class="block mb-0.5 font-medium text-sm">Provincia (sigla) *</label>
+              <select name="provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></select>
+            </div>
+          </div>
+          <!-- End of New Address Fields -->
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold mb-4">Dettagli Viaggio</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block mb-1 font-medium">Aeroporto di Partenza *</label>
+            <select name="partenza" id="partenza" class="w-full border border-gray-300 p-2 rounded" required onchange="calculateTotal()">
+              <option value="">--- Seleziona aeroporto ---</option>
+              <option value="autonomo">Arrivo autonomo</option>
+              <option value="bgy">BGY - Orio al Serio</option>
+              <option value="mpx">MXP - Malpensa</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold mb-4">Gestione Ospiti</h2>
+        <hr class="my-4 border-gray-300">
+      </section>
+
+      <!-- Dynamic Companions Section for Room 1 -->
+      <section id="companionsSectionRoom1" class="mt-2">
+        <h3 class="text-lg font-semibold mb-3 sr-only">Dati Ospite - Camera 1</h3> 
+        <div id="companionFieldsRoom1"></div>
+        <div class="mt-4">
+            <button type="button" id="addCompanionRoom1Button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm w-full md:w-auto">
+              Aggiungi Ospite (Camera 1)
+            </button>
+            <span id="room1MaxReachedText" class="text-sm text-red-500 hidden">Numero massimo di ospiti per questa camera raggiunto</span>
+        </div>
+      </section>
+
+      <hr class="my-6 border-gray-300"> 
+
+      <!-- Button to Add Room 2 -->
+      <section class="mt-6">
+        <button type="button" id="addRoom2Button" class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded">
+          Aggiungi camera
+        </button>
+      </section>
+
+      <!-- Room 2 Section (Initially Hidden) -->
+      <section id="room2Section" class="hidden mt-6 pt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Dati Camera 2</h2>
+            <button type="button" id="removeRoom2Button" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1 rounded text-sm">Rimuovi Camera 2</button>
+        </div>
+        <div id="room2GuestFields" class="mt-4"></div>
+        <div class="mt-4">
+            <button type="button" id="addGuestRoom2Button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm w-full md:w-auto">
+              Aggiungi Occupante (Camera 2)
+            </button>
+            <span id="room2MaxReachedText" class="text-sm text-red-500 hidden">Numero massimo di ospiti per questa camera raggiunto</span>
+        </div>
+      </section>
+
+      <hr class="my-6 border-gray-300">
+
+      <!-- Company Billing Section -->
+      <section class="bg-yellow-50 p-3 rounded-lg">
+        <h2 class="text-xl font-semibold mb-3">Fatturazione</h2>
+        <div class="mb-3">
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="fatturazioneAziendale" name="fatturazione_aziendale" class="form-checkbox mr-2" onchange="toggleCompanyBilling()">
+            <span class="font-medium text-sm">Voglio la fatturazione aziendale</span>
+          </label>
+          </div>
+          
+        <div id="companyBillingFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Ragione Sociale *</label>
+            <input type="text" name="ragione_sociale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Partita IVA *</label>
+            <input type="text" name="partita_iva" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{11}" title="Inserire 11 cifre">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice Fiscale Azienda</label>
+            <input type="text" name="codice_fiscale_azienda" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" oninput="this.value = this.value.toUpperCase()">
+          </div>
+
+          <!-- New Separated Address Fields for Company Billing -->
+          <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo Sede Legale *</div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+            <input type="text" name="sede_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+          <!-- Combined CAP, Città, Provincia for Company Billing -->
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">CAP *</label>
+              <input type="text" name="sede_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Città *</label>
+              <input type="text" name="sede_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Provincia (sigla) *</label>
+              <select name="sede_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm"></select>
+            </div>
+          </div>
+          <!-- End of New Address Fields -->
+
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice SDI (se disponibile)</label>
+            <input type="text" name="codice_sdi" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" maxlength="7">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">PEC (se disponibile)</label>
+            <input type="email" name="pec_azienda" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-blue-50 p-4 rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Riepilogo Costi</h2>
+        <div class="space-y-3">
+          <div class="bg-white p-3 rounded">
+            <button type="button" id="togglePricingRulesButton" class="text-sm text-gray-600 mb-2 font-semibold hover:text-blue-600 focus:outline-none">
+              Mostra Regole di Pricing <span id="pricingRulesArrow">&#9662;</span>
+            </button>
+            <ul id="pricingRulesList" class="text-xs text-gray-500 space-y-1 hidden"></ul>
+          </div>
+          <div>
+            <p><strong>Dettaglio Costi per Persona:</strong></p>
+            <div id="costoBase" class="text-sm bg-gray-50 p-2 rounded mt-1">€0</div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+            <p><strong>Numero Totale Persone:</strong> <span id="totalPersone">1</span></p>
+                <p><strong>Aeroporto:</strong> <span id="airport">-</span></p>
+                <p><strong>Camere:</strong> <span id="roomCountsDisplay">-</span></p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-blue-600">
+                <strong>COSTO TOTALE: <span id="prezzoTotale">€0</span></strong>
+            </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="pt-6">
+        <label class="inline-flex items-center mb-2">
+          <input type="checkbox" required class="form-checkbox mr-2">
+          Dichiaro di aver letto e compreso l'informativa ai sensi dell'Art. 13 del Reg. UE 679/2016 *
+        </label>
+        <br />
+        <label class="inline-flex items-center">
+          <input type="checkbox" required class="form-checkbox mr-2">
+          Confermo la veridicità e la correttezza dei dati inseriti *
+        </label>
+      </div>
+
+      <div class="pt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">
+          Invia Iscrizione
+        </button>
+      </div>
+    </form>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="mt-4 hidden">
+      <div id="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded hidden">
+        Iscrizione completata con successo!
+      </div>
+      <div id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden">
+        Errore durante l'iscrizione. Riprova.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let companionRoom1Count = 0;
+    const MAX_COMPANIONS_ROOM1 = 3;
+    const addCompanionRoom1Button = document.getElementById('addCompanionRoom1Button');
+    const room1MaxReachedTextEl = document.getElementById('room1MaxReachedText');
+
+    let guestRoom2Count = 0;
+    const MAX_GUESTS_ROOM2 = 4;
+    const addGuestRoom2Button = document.getElementById('addGuestRoom2Button');
+    const room2MaxReachedTextEl = document.getElementById('room2MaxReachedText');
+
+    const MAX_GUESTS_MESSAGE = "Numero massimo di ospiti per questa camera raggiunto";
+
+    // Price structure (remains the same)
+    const prices = {
+        adulto: {
+            camera_doppia: { solo_land: 930, volo_bgy: 1351, volo_mxp: 1357 },
+            camera_singola: { solo_land: 1180, volo_bgy: 1601, volo_mxp: 1607 }
+        },
+        neonato: 190, 
+        bambino_2_12: { 
+            terzo_letto: { solo_land: 340, volo_bgy: 761, volo_mxp: 767 },
+            quarto_letto: { solo_land: 540, volo_bgy: 961, volo_mxp: 967 }
+        },
+        adulto_terzo_quarto_letto: { 
+            solo_land: 740, volo_bgy: 1161, volo_mxp: 1167
+        }
+    };
+
+    // To store calculation results for submission
+    let calculatedRoomCounts = { single: 0, double: 0, triple: 0, quadruple: 0 };
+    let allGuestsWithCostsForPayload = [];
+
+    // Helper function to get cost for a paying occupant (generic lookup, used for 3rd/4th in Room 1, and all in Room 2)
+    function getOccupantCost(age, positionInPayingGroup, packageTypeKey, totalPayingInRoom) {
+        if (age < 2) return prices.neonato;
+
+        if (positionInPayingGroup === 1) {
+            if (totalPayingInRoom === 1) {
+                return prices.adulto.camera_singola[packageTypeKey];
+            } else { 
+                return prices.adulto.camera_doppia[packageTypeKey];
+            }
+        } else if (positionInPayingGroup === 2) { 
+            return prices.adulto.camera_doppia[packageTypeKey]; 
+        } else if (positionInPayingGroup === 3) { 
+            if (age < 12) return prices.bambino_2_12.terzo_letto[packageTypeKey];
+            return prices.adulto_terzo_quarto_letto[packageTypeKey];
+        } else if (positionInPayingGroup === 4) { 
+            if (age < 12) return prices.bambino_2_12.quarto_letto[packageTypeKey];
+            return prices.adulto_terzo_quarto_letto[packageTypeKey];
+        }
+        return 0; 
+    }
+
+    function getOccupantLabel(age, positionInPayingGroup, packageTypeKey, totalPayingInRoom, isRoom1Context = false, occupantIndexInRoom1 = 0) {
+        let label = "";
+        if (age < 2) {
+            label = "Neonato <2 anni";
+            if (isRoom1Context && occupantIndexInRoom1 >=2) label += (occupantIndexInRoom1 === 2 ? " (3° letto)" : " (4° letto)");
+        } else {
+            if (isRoom1Context) { // Special labeling for Room 1 paying occupants
+                 if (occupantIndexInRoom1 === 2) { // 3rd person overall in Room 1 (2nd companion)
+                    label = age < 12 ? "Bambino 2-12 anni (3° letto)" : "Adulto >=12 anni (3° letto)";
+                } else if (occupantIndexInRoom1 === 3) { // 4th person overall in Room 1 (3rd companion)
+                    label = age < 12 ? "Bambino 2-12 anni (4° letto)" : "Adulto >=12 anni (4° letto)";
+                }
+            } else { // Room 2 labeling or generic paying occupant
+                if (positionInPayingGroup === 1) {
+                    label = totalPayingInRoom === 1 ? "Adulto Camera Singola" : "Adulto Camera Doppia";
+                } else if (positionInPayingGroup === 2) {
+                    label = "Adulto Camera Doppia";
+                } else if (positionInPayingGroup === 3) {
+                    label = age < 12 ? "Bambino 2-12 anni (3° letto)" : "Adulto >=12 anni (3° letto)";
+                } else if (positionInPayingGroup === 4) {
+                    label = age < 12 ? "Bambino 2-12 anni (4° letto)" : "Adulto >=12 anni (4° letto)";
+                }
+            }
+        }
+        return label;
+    }
+
+    // Helper to create guest/companion HTML block
+    function createGuestBlockHTML(roomType, index) {
+      const isRoom1 = roomType === 'room1';
+      const prefix = isRoom1 ? `ospite_room1_${index}` : `ospite_room2_${index}`;
+      const title = isRoom1 ? `Ospite ${index} (Camera del Capogruppo)` : `Ospite ${index} (Camera 2)`;
+
+      return `
+        <div class="guest-block bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200" data-room="${roomType}" data-index="${index}">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-semibold text-base">${title}</h3>
+            <button type="button" class="remove-guest-button text-red-500 hover:text-red-700 font-semibold text-xs" data-remove-room="${roomType}" data-remove-index="${index}">Rimuovi</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Nome *</label>
+              <input type="text" name="${prefix}_nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Cognome *</label>
+              <input type="text" name="${prefix}_cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label>
+              <input type="date" name="${prefix}_data_nascita" id="${prefix}_data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm dynamic-date-input" required>
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label>
+              <input type="text" name="${prefix}_codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" title="Formato: RSSMRA80A01H501X" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            
+            <div class="md:col-span-2 my-2">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="${prefix}_use_capogruppo_address" class="form-checkbox mr-2 use-capogruppo-address-checkbox" data-prefix="${prefix}">
+                    <span class="text-sm font-medium">Usa indirizzo di residenza del Capogruppo</span>
+                </label>
+            </div>
+
+            <!-- New Separated Address Fields for Guests/Companions -->
+            <div id="${prefix}_address_wrapper" class="contents">
+                <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-1">Indirizzo di Residenza *</div>
+                <div class="md:col-span-2">
+                    <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+                    <input type="text" name="${prefix}_via_e_numero_civico" id="${prefix}_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm guest-address-field" required>
+                </div>
+                <!-- Combined CAP, Città, Provincia for Guests/Companions -->
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+                    <div>
+                        <label class="block mb-0.5 font-medium text-sm">CAP *</label>
+                        <input type="text" name="${prefix}_cap" id="${prefix}_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm guest-address-field" required pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                    </div>
+                    <div>
+                        <label class="block mb-0.5 font-medium text-sm">Città *</label>
+                        <input type="text" name="${prefix}_citta" id="${prefix}_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm guest-address-field" required>
+                    </div>
+                    <div>
+                        <label class="block mb-0.5 font-medium text-sm">Provincia (sigla) *</label>
+                        <select name="${prefix}_provincia" id="${prefix}_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm guest-address-field" required></select>
+                    </div>
+                </div>
+            </div>
+            <!-- End of New Address Fields -->
+
+            </div>
+          </div>
+        `;
+    }
+
+    // Add companion to Room 1
+    function addCompanionRoom1() {
+      if (companionRoom1Count < MAX_COMPANIONS_ROOM1) {
+        companionRoom1Count++;
+        const container = document.getElementById('companionFieldsRoom1');
+        const newBlock = document.createElement('div');
+        newBlock.innerHTML = createGuestBlockHTML('room1', companionRoom1Count);
+        container.appendChild(newBlock.firstElementChild);
+        populateProvinceDropdown(newBlock.querySelector('select'));
+        calculateTotal();
+      }
+      // Toggle button and message visibility
+      const isMaxRoom1 = companionRoom1Count >= MAX_COMPANIONS_ROOM1;
+      addCompanionRoom1Button.classList.toggle('hidden', isMaxRoom1);
+      room1MaxReachedTextEl.classList.toggle('hidden', !isMaxRoom1);
+    }
+
+    // Add guest to Room 2
+    function addGuestRoom2() {
+      if (guestRoom2Count < MAX_GUESTS_ROOM2) {
+        guestRoom2Count++;
+        const container = document.getElementById('room2GuestFields');
+        const newBlock = document.createElement('div');
+        newBlock.innerHTML = createGuestBlockHTML('room2', guestRoom2Count);
+        container.appendChild(newBlock.firstElementChild);
+        populateProvinceDropdown(newBlock.querySelector('select'));
+        calculateTotal();
+      }
+      // Toggle button and message visibility
+      const isMaxRoom2 = guestRoom2Count >= MAX_GUESTS_ROOM2;
+      addGuestRoom2Button.classList.toggle('hidden', isMaxRoom2);
+      room2MaxReachedTextEl.classList.toggle('hidden', !isMaxRoom2);
+    }
+    
+    // Event delegation for removing guests/companions
+    document.getElementById('registrationForm').addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('remove-guest-button')) {
+        const roomType = e.target.dataset.removeRoom;
+        e.target.closest('.guest-block').remove();
+
+        if (roomType === 'room1') {
+          companionRoom1Count = document.getElementById('companionFieldsRoom1').children.length;
+          const isMaxRoom1 = companionRoom1Count >= MAX_COMPANIONS_ROOM1;
+          addCompanionRoom1Button.classList.toggle('hidden', isMaxRoom1);
+          room1MaxReachedTextEl.classList.toggle('hidden', !isMaxRoom1);
+        } else if (roomType === 'room2') {
+          guestRoom2Count = document.getElementById('room2GuestFields').children.length;
+          const isMaxRoom2 = guestRoom2Count >= MAX_GUESTS_ROOM2;
+          addGuestRoom2Button.classList.toggle('hidden', isMaxRoom2);
+          room2MaxReachedTextEl.classList.toggle('hidden', !isMaxRoom2);
+        }
+        calculateTotal();
+      }
+    });
+
+    // Toggle company billing fields (remains the same)
+    function toggleCompanyBilling() {
+      const checkbox = document.getElementById('fatturazioneAziendale');
+      const fields = document.getElementById('companyBillingFields');
+      const inputs = fields.querySelectorAll('input[type="text"], input[type="email"]');
+      const isChecked = checkbox.checked;
+
+      fields.classList.toggle('hidden', !isChecked);
+
+      inputs.forEach(input => {
+        input.disabled = !isChecked;
+
+        const companyCoreFields = ['ragione_sociale', 'partita_iva'];
+        const companyAddressFields = ['sede_via_e_numero_civico', 'sede_cap', 'sede_citta', 'sede_provincia'];
+        
+        if (companyCoreFields.includes(input.name) || companyAddressFields.includes(input.name)) {
+          input.required = isChecked;
+        }
+
+        if (!isChecked) {
+          input.value = '';
+        }
+      });
+    }
+
+    // Calculate age from birth date
+    let calculationDate = new Date(); // Default to today
+
+    function calculateAge(birthDate) {
+      if (!birthDate) return 0;
+      const birth = new Date(birthDate);
+
+      // Add this check for invalid date strings
+      if (isNaN(birth.getTime())) {
+        return 0; 
+      }
+
+      let age = calculationDate.getFullYear() - birth.getFullYear();
+      const monthDiff = calculationDate.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && calculationDate.getDate() < birth.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    const provinceMap = [
+      { name: "Agrigento", abbr: "AG" }, { name: "Alessandria", abbr: "AL" }, { name: "Ancona", abbr: "AN" }, { name: "Aosta", abbr: "AO" }, { name: "Arezzo", abbr: "AR" }, { name: "Ascoli Piceno", abbr: "AP" }, { name: "Asti", abbr: "AT" }, { name: "Avellino", abbr: "AV" }, { name: "Bari", abbr: "BA" }, { name: "Barletta-Andria-Trani", abbr: "BT" }, { name: "Belluno", abbr: "BL" }, { name: "Benevento", abbr: "BN" }, { name: "Bergamo", abbr: "BG" }, { name: "Biella", abbr: "BI" }, { name: "Bologna", abbr: "BO" }, { name: "Bolzano", abbr: "BZ" }, { name: "Brescia", abbr: "BS" }, { name: "Brindisi", abbr: "BR" }, { name: "Cagliari", abbr: "CA" }, { name: "Caltanissetta", abbr: "CL" }, { name: "Campobasso", abbr: "CB" }, { name: "Caserta", abbr: "CE" }, { name: "Catania", abbr: "CT" }, { name: "Catanzaro", abbr: "CZ" }, { name: "Chieti", abbr: "CH" }, { name: "Como", abbr: "CO" }, { name: "Cosenza", abbr: "CS" }, { name: "Cremona", abbr: "CR" }, { name: "Crotone", abbr: "KR" }, { name: "Cuneo", abbr: "CN" }, { name: "Enna", abbr: "EN" }, { name: "Fermo", abbr: "FM" }, { name: "Ferrara", abbr: "FE" }, { name: "Firenze", abbr: "FI" }, { name: "Foggia", abbr: "FG" }, { name: "Forlì-Cesena", abbr: "FC" }, { name: "Frosinone", abbr: "FR" }, { name: "Genova", abbr: "GE" }, { name: "Gorizia", abbr: "GO" }, { name: "Grosseto", abbr: "GR" }, { name: "Imperia", abbr: "IM" }, { name: "Isernia", abbr: "IS" }, { name: "L'Aquila", abbr: "AQ" }, { name: "La Spezia", abbr: "SP" }, { name: "Latina", abbr: "LT" }, { name: "Lecce", abbr: "LE" }, { name: "Lecco", abbr: "LC" }, { name: "Livorno", abbr: "LI" }, { name: "Lodi", abbr: "LO" }, { name: "Lucca", abbr: "LU" }, { name: "Macerata", abbr: "MC" }, { name: "Mantova", abbr: "MN" }, { name: "Massa-Carrara", abbr: "MS" }, { name: "Matera", abbr: "MT" }, { name: "Messina", abbr: "ME" }, { name: "Milano", abbr: "MI" }, { name: "Modena", abbr: "MO" }, { name: "Monza e Brianza", abbr: "MB" }, { name: "Napoli", abbr: "NA" }, { name: "Novara", abbr: "NO" }, { name: "Nuoro", abbr: "NU" }, { name: "Oristano", abbr: "OR" }, { name: "Padova", abbr: "PD" }, { name: "Palermo", abbr: "PA" }, { name: "Parma", abbr: "PR" }, { name: "Pavia", abbr: "PV" }, { name: "Perugia", abbr: "PG" }, { name: "Pesaro e Urbino", abbr: "PU" }, { name: "Pescara", abbr: "PE" }, { name: "Piacenza", abbr: "PC" }, { name: "Pisa", abbr: "PI" }, { name: "Pistoia", abbr: "PT" }, { name: "Pordenone", abbr: "PN" }, { name: "Potenza", abbr: "PZ" }, { name: "Prato", abbr: "PO" }, { name: "Ragusa", abbr: "RG" }, { name: "Ravenna", abbr: "RA" }, { name: "Reggio Calabria", abbr: "RC" }, { name: "Reggio Emilia", abbr: "RE" }, { name: "Rieti", abbr: "RI" }, { name: "Rimini", abbr: "RN" }, { name: "Roma", abbr: "RM" }, { name: "Rovigo", abbr: "RO" }, { name: "Salerno", abbr: "SA" }, { name: "Sassari", abbr: "SS" }, { name: "Savona", abbr: "SV" }, { name: "Siena", abbr: "SI" }, { name: "Siracusa", abbr: "SR" }, { name: "Sondrio", abbr: "SO" }, { name: "Sud Sardegna", abbr: "SU" }, { name: "Taranto", abbr: "TA" }, { name: "Teramo", abbr: "TE" }, { name: "Terni", abbr: "TR" }, { name: "Torino", abbr: "TO" }, { name: "Trapani", abbr: "TP" }, { name: "Trento", abbr: "TN" }, { name: "Treviso", abbr: "TV" }, { name: "Trieste", abbr: "TS" }, { name: "Udine", abbr: "UD" }, { name: "Varese", abbr: "VA" }, { name: "Venezia", abbr: "VE" }, { name: "Verbano-Cusio-Ossola", abbr: "VB" }, { name: "Vercelli", abbr: "VC" }, { name: "Verona", abbr: "VR" }, { name: "Vibo Valentia", abbr: "VV" }, { name: "Vicenza", abbr: "VI" }, { name: "Viterbo", abbr: "VT" }
+    ].sort((a, b) => a.name.localeCompare(b.name));
+
+    function populateProvinceDropdown(selectElement) {
+      if (!selectElement) return;
+      selectElement.add(new Option("--- Seleziona ---", ""));
+      provinceMap.forEach(p => {
+        selectElement.add(new Option(p.name, p.abbr));
+      });
+    }
+
+    // Event delegation for dynamic date inputs to trigger calculateTotal
+    document.getElementById('registrationForm').addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('dynamic-date-input')) {
+            calculateTotal();
+        }
+        // Handle "Usa indirizzo di residenza del Capogruppo" checkbox changes
+        if (e.target && e.target.classList.contains('use-capogruppo-address-checkbox')) {
+            const useAddressCheckbox = e.target;
+            const prefix = useAddressCheckbox.dataset.prefix;
+            
+            const addressWrapper = document.getElementById(`${prefix}_address_wrapper`);
+            const addressInputs = addressWrapper ? addressWrapper.querySelectorAll('.guest-address-field:not(select)') : [];
+            const provinciaSelect = document.getElementById(`${prefix}_provincia`);
+
+            if (useAddressCheckbox.checked) {
+                // Copy values from Capogruppo
+                document.getElementById(`${prefix}_via_e_numero_civico`).value = document.querySelector('input[name="via_e_numero_civico"]').value;
+                document.getElementById(`${prefix}_cap`).value = document.querySelector('input[name="cap"]').value;
+                document.getElementById(`${prefix}_citta`).value = document.querySelector('input[name="citta"]').value;
+                if(provinciaSelect) provinciaSelect.value = document.querySelector('select[name="provincia"]').value;
+
+                // Hide the fields and make them not required for validation
+                if (addressWrapper) addressWrapper.classList.add('hidden');
+                addressInputs.forEach(input => {
+                    input.required = false;
+                });
+                if (provinciaSelect) provinciaSelect.required = false;
+
+            } else {
+                let firstInput = null;
+                // Clear values and make fields required again
+                addressInputs.forEach(input => {
+                    if (!firstInput) firstInput = input;
+                    input.value = '';
+                    input.required = true; 
+                });
+                if (provinciaSelect) {
+                    provinciaSelect.value = '';
+                    provinciaSelect.required = true;
+                }
+                
+                // Show the fields
+                if (addressWrapper) addressWrapper.classList.remove('hidden');
+                if (firstInput) firstInput.focus();
+            }
+        }
+    });
+
+    // Main Price calculation function (COMPLETE REWRITE NEEDED)
+    function calculateTotal() {
+      allGuestsWithCostsForPayload = []; // Reset for payload generation
+      calculatedRoomCounts = { single: 0, double: 0, triple: 0, quadruple: 0 };
+      
+      const partenzaSelect = document.getElementById('partenza');
+        if (!partenzaSelect.value) {
+            document.getElementById('costoBase').innerHTML = '<span class="text-red-500 font-medium">Selezionare Aeroporto di Partenza</span>';
+          document.getElementById('totalPersone').textContent = '-'; 
+          document.getElementById('airport').textContent = '-';
+            document.getElementById('prezzoTotale').textContent = '-';
+          document.getElementById('roomCountsDisplay').textContent = '-'; // Added for room counts
+            return;
+        }
+
+        let packageTypeKey;
+        const partenzaValue = partenzaSelect.value;
+        if (partenzaValue === 'autonomo') packageTypeKey = 'solo_land';
+        else if (partenzaValue === 'bgy') packageTypeKey = 'volo_bgy';
+        else if (partenzaValue === 'mpx') packageTypeKey = 'volo_mxp';
+        else { 
+            document.getElementById('costoBase').innerHTML = '<span class="text-red-500 font-medium">Selezione Aeroporto non valida.</span>';
+          // Reset other fields too
+            return; 
+        }
+        
+      let costo_totale_gruppo = 0;
+      let costBreakdownHTML = [];
+      let totalPeopleInForm = 0;
+
+      // --- CAMERA 1 (Capogruppo + Companions) ---
+        const capogruppoBirthDate = document.querySelector('input[name="data_nascita"]').value;
+        const capogruppoAge = capogruppoBirthDate ? calculateAge(capogruppoBirthDate) : 0;
+      const capogruppoName = document.querySelector('input[name="nome"]').value || "Capogruppo";
+      const capogruppoCognome = document.querySelector('input[name="cognome"]').value || "";
+      
+      totalPeopleInForm++;
+      // Capogruppo is the 1st person in Room 1, cost is 0 due to "first two free"
+      costBreakdownHTML.push(`<p class='font-semibold mt-1 text-blue-700'>Camera 1 (del Capogruppo):</p>`);
+      costBreakdownHTML.push(`<div>${capogruppoName} ${capogruppoCognome} (Capogruppo, Età: ${capogruppoAge}) - GRATUITO: €0.00</div>`);
+
+        const companionElementsRoom1 = document.getElementById('companionFieldsRoom1').children;
+      let occupantsInRoom1EffectiveCount = 1; // Starts with Capogruppo
+
+        for (let i = 0; i < companionElementsRoom1.length; i++) {
+          totalPeopleInForm++;
+          occupantsInRoom1EffectiveCount++;
+            const companionBlock = companionElementsRoom1[i];
+            const companionIndex = parseInt(companionBlock.dataset.index); 
+          const companionName = companionBlock.querySelector(`input[name="ospite_room1_${companionIndex}_nome"]`).value || `Ospite ${companionIndex}`;
+          const companionCognome = companionBlock.querySelector(`input[name="ospite_room1_${companionIndex}_cognome"]`).value || "";
+            const companionBirthDateInput = document.getElementById(`ospite_room1_${companionIndex}_data_nascita`);
+            const companionAge = companionBirthDateInput && companionBirthDateInput.value ? calculateAge(companionBirthDateInput.value) : 0;
+          
+          let currentGuestCost = 0;
+          let guestLabel = "";
+
+          if (occupantsInRoom1EffectiveCount === 2) { // 1st companion, 2nd person in Room 1
+              currentGuestCost = 0;
+              guestLabel = "GRATUITO";
+          } else if (occupantsInRoom1EffectiveCount === 3) { // 2nd companion, 3rd person in Room 1
+              if (companionAge < 2) { currentGuestCost = prices.neonato; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 2); }
+              else if (companionAge < 12) { currentGuestCost = prices.bambino_2_12.terzo_letto[packageTypeKey]; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 2); }
+              else { currentGuestCost = prices.adulto_terzo_quarto_letto[packageTypeKey]; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 2); }
+          } else if (occupantsInRoom1EffectiveCount === 4) { // 3rd companion, 4th person in Room 1
+              if (companionAge < 2) { currentGuestCost = prices.neonato; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 3); }
+              else if (companionAge < 12) { currentGuestCost = prices.bambino_2_12.quarto_letto[packageTypeKey]; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 3); }
+              else { currentGuestCost = prices.adulto_terzo_quarto_letto[packageTypeKey]; guestLabel = getOccupantLabel(companionAge, 0, packageTypeKey, 0, true, 3); }
+          }
+          costo_totale_gruppo += currentGuestCost;
+          costBreakdownHTML.push(`<div>${companionName} ${companionCognome} (Ospite Camera 1, Età: ${companionAge}) - ${guestLabel}: €${currentGuestCost.toFixed(2)}</div>`);
+          
+          // Prepare guest data for payload
+          allGuestsWithCostsForPayload.push({
+            type: 'ospite_room1', // To help retrieve form data later
+            form_index: companionIndex
+          });
+      }
+      // Determine Room 1 type
+      if (occupantsInRoom1EffectiveCount > 0) {
+          if (occupantsInRoom1EffectiveCount === 1) calculatedRoomCounts.single++;
+          else if (occupantsInRoom1EffectiveCount === 2) calculatedRoomCounts.double++;
+          else if (occupantsInRoom1EffectiveCount === 3) calculatedRoomCounts.triple++;
+          else if (occupantsInRoom1EffectiveCount >= 4) calculatedRoomCounts.quadruple++;
+      }
+
+      // --- CAMERA 2 --- (If active)
+        const room2Section = document.getElementById('room2Section');
+        if (!room2Section.classList.contains('hidden')) {
+            const guestElementsRoom2 = document.getElementById('room2GuestFields').children;
+          let occupantsInRoom2Data = []; // Array of {age: age, name: name, cognome: cognome, form_index: index }
+          
+            for (let i = 0; i < guestElementsRoom2.length; i++) {
+              totalPeopleInForm++;
+                const guestBlock = guestElementsRoom2[i];
+                const guestIndex = parseInt(guestBlock.dataset.index); 
+              const guestName = guestBlock.querySelector(`input[name="ospite_room2_${guestIndex}_nome"]`).value || `Ospite ${guestIndex}`;
+              const guestCognome = guestBlock.querySelector(`input[name="ospite_room2_${guestIndex}_cognome"]`).value || "";
+                const guestBirthDateInput = document.getElementById(`ospite_room2_${guestIndex}_data_nascita`);
+                const guestAge = guestBirthDateInput && guestBirthDateInput.value ? calculateAge(guestBirthDateInput.value) : 0;
+              occupantsInRoom2Data.push({ age: guestAge, name: guestName, cognome: guestCognome, form_index: guestIndex });
+          }
+
+          if (occupantsInRoom2Data.length > 0) {
+              costBreakdownHTML.push(`<p class='font-semibold mt-2 text-blue-700'>Camera 2:</p>`);
+              let payingGuestsInRoom2Count = 0;
+              const totalPayingInRoom2NonNeonati = occupantsInRoom2Data.filter(o => o.age >= 2).length;
+
+              occupantsInRoom2Data.forEach(guestData => {
+                  let currentGuestCost = 0;
+                  let guestLabel = "";
+                  let positionInPayingGroup = 0;
+
+                  if (guestData.age < 2) {
+                      currentGuestCost = prices.neonato;
+                      guestLabel = getOccupantLabel(guestData.age, 0, packageTypeKey, 0, false);
+                    } else {
+                      payingGuestsInRoom2Count++;
+                      positionInPayingGroup = payingGuestsInRoom2Count;
+                      currentGuestCost = getOccupantCost(guestData.age, positionInPayingGroup, packageTypeKey, totalPayingInRoom2NonNeonati);
+                      guestLabel = getOccupantLabel(guestData.age, positionInPayingGroup, packageTypeKey, totalPayingInRoom2NonNeonati, false);
+                  }
+                  costo_totale_gruppo += currentGuestCost;
+                  costBreakdownHTML.push(`<div>${guestData.name} ${guestData.cognome} (Ospite Camera 2, Età: ${guestData.age}) - ${guestLabel}: €${currentGuestCost.toFixed(2)}</div>`);
+                  
+                  allGuestsWithCostsForPayload.push({
+                    type: 'ospite_room2', // To help retrieve form data later
+                    form_index: guestData.form_index
+                  });
+              });
+              // Determine Room 2 type
+              if (occupantsInRoom2Data.length === 1) calculatedRoomCounts.single++;
+              else if (occupantsInRoom2Data.length === 2) calculatedRoomCounts.double++;
+              else if (occupantsInRoom2Data.length === 3) calculatedRoomCounts.triple++;
+              else if (occupantsInRoom2Data.length >= 4) calculatedRoomCounts.quadruple++;
+          }
+      }
+      
+      document.getElementById('costoBase').innerHTML = costBreakdownHTML.length > 0 ? costBreakdownHTML.join('') : '<span class="text-red-500 font-medium">Nessun partecipante aggiunto.</span>';
+      document.getElementById('totalPersone').textContent = totalPeopleInForm;
+      document.getElementById('airport').textContent = partenzaSelect.selectedOptions[0].text;
+      document.getElementById('prezzoTotale').textContent = `€${costo_totale_gruppo.toFixed(2)}`;
+      
+      let roomCountsStr = "";
+      const counts = [];
+      if(calculatedRoomCounts.single > 0) counts.push(`${calculatedRoomCounts.single} singola`);
+      if(calculatedRoomCounts.double > 0) counts.push(`${calculatedRoomCounts.double} doppia`);
+      if(calculatedRoomCounts.triple > 0) counts.push(`${calculatedRoomCounts.triple} tripla`);
+      if(calculatedRoomCounts.quadruple > 0) counts.push(`${calculatedRoomCounts.quadruple} quadrupla`);
+      roomCountsStr += counts.length > 0 ? counts.join(', ') : 'Nessuna';
+      document.getElementById('roomCountsDisplay').textContent = roomCountsStr; // Update room counts display
+    }
+
+    // Update pricing rules display (add new display for room counts)
+    function updatePricingRulesDisplay() {
+      const rulesList = document.querySelector('#pricingRulesList');
+      const formattedDate = calculationDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      rulesList.innerHTML = `
+        <p class="font-semibold text-blue-600">Camera 1: Primi 2 occupanti (Capogruppo + 1 Ospite) GRATUITI!</p>
+        <li class="font-semibold mt-1">Adulto:</li>
+        <li> - Camera Singola (Solo Land): €${prices.adulto.camera_singola.solo_land.toFixed(2)}</li>
+        <li> - Camera Singola (Volo BGY): €${prices.adulto.camera_singola.volo_bgy.toFixed(2)}</li>
+        <li> - Camera Singola (Volo MXP): €${prices.adulto.camera_singola.volo_mxp.toFixed(2)}</li>
+        <li> - Camera Doppia (Solo Land): €${prices.adulto.camera_doppia.solo_land.toFixed(2)} /persona</li>
+        <li> - Camera Doppia (Volo BGY): €${prices.adulto.camera_doppia.volo_bgy.toFixed(2)} /persona</li>
+        <li> - Camera Doppia (Volo MXP): €${prices.adulto.camera_doppia.volo_mxp.toFixed(2)} /persona</li>
+        
+        <li class="font-semibold mt-2">Bambino 0-2 anni (non compiuti):</li>
+        <li> - Quota fissa (tutte le camere/pacchetti): €${prices.neonato.toFixed(2)}</li>
+        
+        <li class="font-semibold mt-2">Bambino 2-12 anni (non compiuti) - come 3°/4° letto:</li>
+        <li> - 3° letto (Solo Land): €${prices.bambino_2_12.terzo_letto.solo_land.toFixed(2)}</li>
+        <li> - 3° letto (Volo BGY): €${prices.bambino_2_12.terzo_letto.volo_bgy.toFixed(2)}</li>
+        <li> - 3° letto (Volo MXP): €${prices.bambino_2_12.terzo_letto.volo_mxp.toFixed(2)}</li>
+        <li> - 4° letto (Solo Land): €${prices.bambino_2_12.quarto_letto.solo_land.toFixed(2)}</li>
+        <li> - 4° letto (Volo BGY): €${prices.bambino_2_12.quarto_letto.volo_bgy.toFixed(2)}</li>
+        <li> - 4° letto (Volo MXP): €${prices.bambino_2_12.quarto_letto.volo_mxp.toFixed(2)}</li>
+
+        <li class="font-semibold mt-2">Adulto (dai 12 anni) - come 3°/4° letto:</li>
+        <li> - 3°/4° letto (Solo Land): €${prices.adulto_terzo_quarto_letto.solo_land.toFixed(2)}</li>
+        <li> - 3°/4° letto (Volo BGY): €${prices.adulto_terzo_quarto_letto.volo_bgy.toFixed(2)}</li>
+        <li> - 3°/4° letto (Volo MXP): €${prices.adulto_terzo_quarto_letto.volo_mxp.toFixed(2)}</li>
+        <p class="text-xs mt-3">Nota: Per Camera 2 (o se più di 2 persone in Camera 1): 'Camera Doppia' si applica ai primi due adulti paganti, 'Camera Singola' se un solo adulto pagante è in camera. I successivi (3°/4°) pagano le tariffe letto aggiuntivo.</p>
+        <p class="text-xs mt-2 font-semibold">Nota: L'età viene calcolata alla data di partenza (${formattedDate}).</p>
+      `;
+    }
+
+    // Initial setup calls
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        if (config.calculationDate) {
+          calculationDate = new Date(config.calculationDate);
+        }
+      } catch (error) {
+        console.error('Error fetching config:', error);
+        // Keep default calculationDate if fetch fails
+      }
+
+      document.querySelectorAll('select[name="provincia"], select[name="sede_provincia"]').forEach(populateProvinceDropdown);
+
+      updatePricingRulesDisplay();
+      document.querySelector('input[name="data_nascita"]').addEventListener('change', calculateTotal);
+      
+      addCompanionRoom1Button.addEventListener('click', addCompanionRoom1);
+      addGuestRoom2Button.addEventListener('click', addGuestRoom2);
+
+      const addRoom2Button = document.getElementById('addRoom2Button');
+      const removeRoom2Button = document.getElementById('removeRoom2Button');
+      const room2Section = document.getElementById('room2Section');
+      
+      // Pricing Rules Toggle
+      const togglePricingRulesButton = document.getElementById('togglePricingRulesButton');
+      const pricingRulesList = document.getElementById('pricingRulesList');
+      const pricingRulesArrow = document.getElementById('pricingRulesArrow');
+
+      if (togglePricingRulesButton && pricingRulesList && pricingRulesArrow) {
+        togglePricingRulesButton.addEventListener('click', () => {
+          const isHidden = pricingRulesList.classList.toggle('hidden');
+          if (isHidden) {
+            togglePricingRulesButton.childNodes[0].nodeValue = "Mostra Regole di Pricing ";
+            pricingRulesArrow.innerHTML = '&#9662;'; // Down arrow
+          } else {
+            togglePricingRulesButton.childNodes[0].nodeValue = "Nascondi Regole di Pricing ";
+            pricingRulesArrow.innerHTML = '&#9652;'; // Up arrow
+          }
+        });
+      }
+      
+      addRoom2Button.addEventListener('click', () => {
+        room2Section.classList.remove('hidden');
+        addRoom2Button.classList.add('hidden');
+        if (guestRoom2Count === 0) { 
+            addGuestRoom2();
+        }
+      });
+
+      removeRoom2Button.addEventListener('click', () => {
+        room2Section.classList.add('hidden');
+        addRoom2Button.classList.remove('hidden');
+        document.getElementById('room2GuestFields').innerHTML = ''; 
+        guestRoom2Count = 0;
+        addGuestRoom2Button.classList.remove('hidden'); // Show button
+        room2MaxReachedTextEl.classList.add('hidden'); // Hide message
+        calculateTotal();
+      });
+      
+      room2Section.classList.add('hidden');
+      addRoom2Button.classList.remove('hidden');
+      addCompanionRoom1Button.classList.remove('hidden'); 
+      room1MaxReachedTextEl.classList.add('hidden'); 
+      addGuestRoom2Button.classList.remove('hidden'); 
+      room2MaxReachedTextEl.classList.add('hidden'); 
+      calculateTotal(); 
+    });
+
+    // Form submission
+    document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      calculateTotal(); // Recalculate just before submitting to ensure data is fresh
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData.entries());
+
+      // Collect all guests from both rooms
+      const ospiti = [];
+      allGuestsWithCostsForPayload.forEach(guestInfo => {
+        const prefix = `${guestInfo.type}_${guestInfo.form_index}`;
+        const useCapogruppoAddressCheckbox = document.getElementById(`${prefix}_use_capogruppo_address`);
+        let indirizzoOspite = '';
+
+        if (useCapogruppoAddressCheckbox && useCapogruppoAddressCheckbox.checked) {
+            // Address is same as capogruppo, build it from capogruppo's fields from `data`
+            indirizzoOspite = `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`;
+        } else {
+            // Address is custom for this guest, get it from form data
+            const via = formData.get(`${prefix}_via_e_numero_civico`) || '';
+            const cap = formData.get(`${prefix}_cap`) || '';
+            const citta = formData.get(`${prefix}_citta`) || '';
+            const provincia = formData.get(`${prefix}_provincia`) || '';
+            if (via && cap && citta && provincia) {
+                indirizzoOspite = `${via}, ${cap} ${citta}, ${provincia}`;
+            }
+        }
+
+        const guestData = {
+              nome: formData.get(`${prefix}_nome`),
+              cognome: formData.get(`${prefix}_cognome`),
+              data_nascita: formData.get(`${prefix}_data_nascita`),
+              codice_fiscale: formData.get(`${prefix}_codice_fiscale`),
+              indirizzo: indirizzoOspite
+          };
+        ospiti.push(guestData);
+      });
+      
+      // Consolidate payload
+      const payload = {
+        nome: data.nome,
+        cognome: data.cognome,
+        email: data.email,
+        cellulare: data.cellulare,
+        data_nascita: data.data_nascita,
+        indirizzo: `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`,
+        codice_fiscale: data.codice_fiscale,
+        partenza: data.partenza,
+        evento: 'Crociera sui Fiordi 2025',
+        
+        camera_singola: calculatedRoomCounts.single,
+        camera_doppia: calculatedRoomCounts.double,
+        camera_tripla: calculatedRoomCounts.triple,
+        camera_quadrupla: calculatedRoomCounts.quadruple,
+        
+        costo_totale_gruppo: parseFloat(document.getElementById('prezzoTotale').textContent.replace('€', '')),
+        
+        ospiti: ospiti,
+        
+        fatturazione_aziendale: document.getElementById('fatturazioneAziendale').checked,
+        dati_fatturazione: document.getElementById('fatturazioneAziendale').checked ? {
+          ragione_sociale: data.ragione_sociale,
+          partita_iva: data.partita_iva,
+          codice_fiscale_azienda: data.codice_fiscale_azienda,
+          indirizzo_sede_legale: data.sede_via_e_numero_civico ? `${data.sede_via_e_numero_civico}, ${data.sede_cap} ${data.sede_citta}, ${data.sede_provincia}` : '',
+          codice_sdi: data.codice_sdi,
+          pec_azienda: data.pec_azienda
+        } : null
+      };
+      
+      // The browser's native form validation handles required fields.
+      // My logic now correctly toggles the `required` attribute, so the "not focusable" error should be resolved.
+      // The old manual validation is removed.
+
+      try {
+        const response = await fetch('/api/registrati', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        const messageContainer = document.getElementById('messageContainer');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if(messageContainer) messageContainer.classList.remove('hidden');
+        
+        if (response.ok && result.success) {
+          if(successMessage) successMessage.classList.remove('hidden');
+          if(errorMessage) errorMessage.classList.add('hidden');
+          this.reset();
+          document.getElementById('companionFieldsRoom1').innerHTML = '';
+          companionRoom1Count = 0;
+          addCompanionRoom1Button.classList.remove('hidden'); 
+          room1MaxReachedTextEl.classList.add('hidden'); 
+          document.getElementById('room2GuestFields').innerHTML = '';
+          guestRoom2Count = 0;
+          addGuestRoom2Button.classList.remove('hidden'); 
+          room2MaxReachedTextEl.classList.add('hidden'); 
+          const room2SectionElement = document.getElementById('room2Section'); 
+          if(room2SectionElement) room2SectionElement.classList.add('hidden'); 
+          const addRoom2ButtonElement = document.getElementById('addRoom2Button');
+          if(addRoom2ButtonElement) addRoom2ButtonElement.classList.remove('hidden'); 
+          calculateTotal(); 
+        } else {
+          if(errorMessage) {
+            errorMessage.classList.remove('hidden');
+            errorMessage.textContent = result.error || 'Errore durante l\'iscrizione.'; 
+          }
+          if(successMessage) successMessage.classList.add('hidden');
+        }
+      } catch (error) {
+        const messageContainer = document.getElementById('messageContainer');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        if(messageContainer) messageContainer.classList.remove('hidden');
+        if(errorMessage) {
+            errorMessage.classList.remove('hidden');
+            errorMessage.textContent = 'Errore di connessione. Riprova.';
+        }
+        if(successMessage) successMessage.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
