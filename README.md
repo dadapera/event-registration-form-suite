@@ -46,7 +46,7 @@ Un sistema completo per la gestione delle registrazioni ai viaggi organizzati co
 ## Struttura del Progetto
 
 ```
-maeviaggi/
+event-form-suite/
 ├── server.js                    # Server Express con API
 ├── package.json                 # Dipendenze del progetto
 ├── database.sqlite              # Database SQLite (creato automaticamente)
