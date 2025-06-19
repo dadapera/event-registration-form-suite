@@ -10,13 +10,14 @@
   <div class="max-w-7xl mx-auto p-6">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold">Dashboard Amministratore</h1>
+      <h2 id="instance-name" class="text-xl font-semibold text-gray-600"></h2>
     </div>
     
     <div class="bg-white rounded-lg shadow p-6 mb-6">
       <h2 class="text-xl font-semibold mb-4">Gestione Registrazioni</h2>
       <div class="flex gap-4 mb-4">
         <button onclick="loadRegistrations()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Mostra Registrazioni
+          Aggiorna
         </button>
         <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Esporta CSV
@@ -76,9 +77,19 @@
   </div>
   
   <script>
+    const pathParts = window.location.pathname.split('/').filter(p => p);
+    const instanceName = pathParts[0] || 'default';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.title = `Admin Dashboard - ${instanceName}`;
+        const instanceNameEl = document.getElementById('instance-name');
+        if(instanceNameEl) instanceNameEl.textContent = `Istanza: ${instanceName}`;
+        loadRegistrations();
+    });
+
     async function loadRegistrations() {
       try {
-        const response = await fetch('/api/registrations');
+        const response = await fetch(`/${instanceName}/api/registrations`);
         const registrations = await response.json();
         displayRegistrations(registrations);
       } catch (error) {
@@ -195,13 +206,13 @@
     
     async function exportCSV() {
       try {
-        const response = await fetch('/api/export');
+        const response = await fetch(`/${instanceName}/api/export`);
         if (response.ok) {
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'registrazioni_' + new Date().toISOString().split('T')[0] + '.csv';
+          a.download = `registrazioni_${instanceName}_${new Date().toISOString().split('T')[0]}.csv`;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
@@ -228,7 +239,7 @@
       }
 
       try {
-        const response = await fetch('/api/admin/delete-database', {
+        const response = await fetch(`/${instanceName}/api/admin/delete-database`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
