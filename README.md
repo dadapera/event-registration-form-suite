@@ -1,4 +1,4 @@
-# Maeviaggi - Sistema di Registrazione per Eventi di Viaggio
+# Sistema di Registrazione per Eventi di Viaggio
 
 Un sistema completo per la gestione delle registrazioni ai viaggi organizzati con calcolo dinamico dei prezzi, tracciamento dettagliato degli accompagnatori ed esportazione CSV.
 
@@ -21,7 +21,7 @@ Un sistema completo per la gestione delle registrazioni ai viaggi organizzati co
 
 1. **Clona o scarica il progetto**
    ```bash
-   cd maeviaggi
+   git clone https://github.com/dadapera/event-registration-form-suite.git
    ```
 
 2. **Installa le dipendenze**
@@ -46,7 +46,7 @@ Un sistema completo per la gestione delle registrazioni ai viaggi organizzati co
 ## Struttura del Progetto
 
 ```
-maeviaggi/
+event-form-suite/
 ├── server.js                    # Server Express con API
 ├── package.json                 # Dipendenze del progetto
 ├── database.sqlite              # Database SQLite (creato automaticamente)
@@ -227,7 +227,7 @@ Nel file `public/index.html`, modifica la funzione `updateGuestFields()` per agg
 2. **Usa un process manager**:
    ```bash
    npm install -g pm2
-   pm2 start server.js --name "maeviaggi"
+   pm2 start server.js --name "event-form"
    ```
 
 3. **Backup automatico del database**:
