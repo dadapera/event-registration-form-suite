@@ -25,23 +25,27 @@
     <form id="registrationForm" class="space-y-6">
       <section>
         <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Capogruppo</h2>
-        <p class="text-sm text-red-600 mb-3">I campi contrassegnati con * sono obbligatori</p>
+        <p class="text-sm text-red-600 mb-2">I campi contrassegnati con * sono obbligatori</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
           <div>
             <label class="block mb-0.5 font-medium text-sm">Nome *</label>
-            <input type="text" name="nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+            <input type="text" name="nome" id="nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateFiscalCode()">
+            <div id="nome_validation" class="text-xs mt-1 hidden"></div>
           </div>
           <div>
             <label class="block mb-0.5 font-medium text-sm">Cognome *</label>
-            <input type="text" name="cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+            <input type="text" name="cognome" id="cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateFiscalCode()">
+            <div id="cognome_validation" class="text-xs mt-1 hidden"></div>
           </div>
           <div>
             <label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label>
-            <input type="date" name="data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="calculateTotal()">
+            <input type="date" name="data_nascita" id="data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="calculateTotal(); validateFiscalCode()">
+            <div id="birth_date_validation" class="text-xs mt-1 hidden"></div>
           </div>
           <div>
             <label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label>
-            <input type="text" name="codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" title="Formato: RSSMRA80A01H501X" oninput="this.value = this.value.toUpperCase()" maxlength="16">
+            <input type="text" name="codice_fiscale" id="codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" title="Formato: RSSMRA80A01H501X" oninput="this.value = this.value.toUpperCase(); validateFiscalCode()" maxlength="16">
+            <div id="fiscal_code_validation" class="text-xs mt-1 hidden"></div>
           </div>
           <div>
             <label class="block mb-0.5 font-medium text-sm">Email *</label>
@@ -361,6 +365,21 @@
         e.preventDefault();
         calculateTotal();
 
+        // Validate all fiscal codes before submission
+        const validation = validateAllFiscalCodes();
+        if (validation.hasErrors) {
+            const mc = document.getElementById('messageContainer');
+            const em = document.getElementById('errorMessage');
+            mc.classList.remove('hidden');
+            em.innerHTML = `<strong>Errori di validazione:</strong><br>• ${validation.errorMessages.join('<br>• ')}`;
+            em.classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+            
+            // Scroll to the error message
+            mc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
 
@@ -617,7 +636,7 @@
     function createGuestBlockHTML(roomType, index) {
         const prefix = `${roomType === 'room1' ? 'ospite_room1' : 'ospite_room2'}_${index}`;
         const title = roomType === 'room1' ? `Ospite ${index} (Camera 1)` : `Ospite ${index} (Camera 2)`;
-        return `<div class="guest-block bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200" data-remove-room="${roomType}"><div class="flex justify-between items-center mb-2"><h3 class="font-semibold text-base">${title}</h3><button type="button" class="remove-guest-button text-red-500 hover:text-red-700 font-semibold text-xs">Rimuovi</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2"><div><label class="block mb-0.5 font-medium text-sm">Nome *</label><input type="text" name="${prefix}_nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Cognome *</label><input type="text" name="${prefix}_cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label><input type="date" name="${prefix}_data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label><input type="text" name="${prefix}_codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" oninput="this.value = this.value.toUpperCase()" maxlength="16"></div><div class="md:col-span-2 my-2"><label class="inline-flex items-center"><input type="checkbox" id="${prefix}_use_capogruppo_address" data-prefix="${prefix}" class="form-checkbox mr-2 use-capogruppo-address-checkbox"><span class="text-sm font-medium">Usa indirizzo del Capogruppo</span></label></div><div id="${prefix}_address_wrapper" class="contents"><div class="md:col-span-2 font-medium text-sm mb-0.5 mt-1">Indirizzo di Residenza *</div><div class="md:col-span-2"><label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label><input type="text" name="${prefix}_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div class="md-col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4"><div><label class="block mb-0.5 font-medium text-sm">CAP *</label><input type="text" name="${prefix}_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{5}" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div><div><label class="block mb-0.5 font-medium text-sm">Città *</label><input type="text" name="${prefix}_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Provincia *</label><select name="${prefix}_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></select></div></div></div></div></div>`;
+        return `<div class="guest-block bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200" data-remove-room="${roomType}"><div class="flex justify-between items-center mb-2"><h3 class="font-semibold text-base">${title}</h3><button type="button" class="remove-guest-button text-red-500 hover:text-red-700 font-semibold text-xs">Rimuovi</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2"><div><label class="block mb-0.5 font-medium text-sm">Nome *</label><input type="text" name="${prefix}_nome" id="${prefix}_nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_nome_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Cognome *</label><input type="text" name="${prefix}_cognome" id="${prefix}_cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_cognome_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label><input type="date" name="${prefix}_data_nascita" id="${prefix}_data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_birth_date_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label><input type="text" name="${prefix}_codice_fiscale" id="${prefix}_codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" oninput="this.value = this.value.toUpperCase(); validateGuestFiscalCode('${prefix}')" maxlength="16"><div id="${prefix}_fiscal_code_validation" class="text-xs mt-1 hidden"></div></div><div class="md:col-span-2 my-2"><label class="inline-flex items-center"><input type="checkbox" id="${prefix}_use_capogruppo_address" data-prefix="${prefix}" class="form-checkbox mr-2 use-capogruppo-address-checkbox"><span class="text-sm font-medium">Usa indirizzo del Capogruppo</span></label></div><div id="${prefix}_address_wrapper" class="contents"><div class="md:col-span-2 font-medium text-sm mb-0.5 mt-1">Indirizzo di Residenza *</div><div class="md:col-span-2"><label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label><input type="text" name="${prefix}_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div class="md-col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4"><div><label class="block mb-0.5 font-medium text-sm">CAP *</label><input type="text" name="${prefix}_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{5}" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div><div><label class="block mb-0.5 font-medium text-sm">Città *</label><input type="text" name="${prefix}_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Provincia *</label><select name="${prefix}_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></select></div></div></div></div></div>`;
     }
 
     function calculateAge(birthDate) {
@@ -721,6 +740,447 @@
       const formattedDate = calculationDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
         rulesList.innerHTML = `<p class="font-semibold text-blue-600">Camera 1: Primi 2 occupanti (Capogruppo + 1 Ospite) GRATUITI!</p><li class="font-semibold mt-1">Adulto:</li><li>- Camera Singola (Solo Land): €${prices.adulto.camera_singola.solo_land.toFixed(2)}</li><li>- Camera Doppia (Solo Land): €${prices.adulto.camera_doppia.solo_land.toFixed(2)} /persona</li><li class="font-semibold mt-2">Bambino 0-2 anni:</li><li>- Quota fissa: €${prices.neonato.toFixed(2)}</li><li class="font-semibold mt-2">Bambino 2-12 anni (3°/4° letto):</li><li>- 3° letto (Solo Land): €${prices.bambino_2_12.terzo_letto.solo_land.toFixed(2)}</li><li>- 4° letto (Solo Land): €${prices.bambino_2_12.quarto_letto.solo_land.toFixed(2)}</li><li class="font-semibold mt-2">Adulto (3°/4° letto):</li><li>- 3°/4° letto (Solo Land): €${prices.adulto_terzo_quarto_letto.solo_land.toFixed(2)}</li><p class="text-xs mt-2 font-semibold">Nota: L'età viene calcolata alla data di partenza (${formattedDate}). I prezzi del volo verranno applicati in base alla selezione.</p>`;
     }
+
+    // Fiscal Code Validation Functions
+    function extractConsonants(str) {
+        // Remove accents and normalize, then extract consonants
+        const normalized = str.toUpperCase()
+            .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+            .replace(/[ÈÉÊË]/g, 'E')
+            .replace(/[ÌÍÎÏ]/g, 'I')
+            .replace(/[ÒÓÔÕÖ]/g, 'O')
+            .replace(/[ÙÚÛÜ]/g, 'U')
+            .replace(/[^A-Z]/g, '');
+        return normalized.replace(/[AEIOU]/g, '');
+    }
+
+    function extractVowels(str) {
+        // Remove accents and normalize, then extract vowels
+        const normalized = str.toUpperCase()
+            .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+            .replace(/[ÈÉÊË]/g, 'E')
+            .replace(/[ÌÍÎÏ]/g, 'I')
+            .replace(/[ÒÓÔÕÖ]/g, 'O')
+            .replace(/[ÙÚÛÜ]/g, 'U')
+            .replace(/[^A-Z]/g, '');
+        return normalized.replace(/[^AEIOU]/g, '');
+    }
+
+    function generateNameCode(name) {
+        const consonants = extractConsonants(name);
+        const vowels = extractVowels(name);
+        
+        // Special rule for names: if 4+ consonants, take 1st, 3rd, 4th
+        if (consonants.length >= 4) {
+            return consonants.charAt(0) + consonants.charAt(2) + consonants.charAt(3);
+        } else if (consonants.length >= 3) {
+            return consonants.substring(0, 3);
+        } else {
+            return (consonants + vowels + 'XXX').substring(0, 3);
+        }
+    }
+
+    function generateSurnameCode(surname) {
+        const consonants = extractConsonants(surname);
+        const vowels = extractVowels(surname);
+        
+        // For surnames: take first 3 consonants, then vowels if needed
+        if (consonants.length >= 3) {
+            return consonants.substring(0, 3);
+        } else {
+            return (consonants + vowels + 'XXX').substring(0, 3);
+        }
+    }
+
+    // Check digit validation tables and function
+    function calculateCheckDigit(fiscalCode15) {
+        // Odd position values (1st, 3rd, 5th, etc. - 0-indexed: 0, 2, 4, etc.)
+        const oddValues = {
+            '0': 1, '1': 0, '2': 5, '3': 7, '4': 9, '5': 13, '6': 15, '7': 17, '8': 19, '9': 21,
+            'A': 1, 'B': 0, 'C': 5, 'D': 7, 'E': 9, 'F': 13, 'G': 15, 'H': 17, 'I': 19, 'J': 21,
+            'K': 2, 'L': 4, 'M': 18, 'N': 20, 'O': 11, 'P': 3, 'Q': 6, 'R': 8, 'S': 12, 'T': 14,
+            'U': 16, 'V': 10, 'W': 22, 'X': 25, 'Y': 24, 'Z': 23
+        };
+
+        // Even position values (2nd, 4th, 6th, etc. - 0-indexed: 1, 3, 5, etc.)
+        const evenValues = {
+            '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+            'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9,
+            'K': 10, 'L': 11, 'M': 12, 'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19,
+            'U': 20, 'V': 21, 'W': 22, 'X': 23, 'Y': 24, 'Z': 25
+        };
+
+        // Check digit table
+        const checkDigits = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+        let sum = 0;
+        for (let i = 0; i < 15; i++) {
+            const char = fiscalCode15.charAt(i);
+            if (i % 2 === 0) {
+                // Odd position (1-indexed)
+                sum += oddValues[char] || 0;
+            } else {
+                // Even position (1-indexed)
+                sum += evenValues[char] || 0;
+            }
+        }
+
+        return checkDigits[sum % 26];
+    }
+
+    function validateCheckDigit(fiscalCode) {
+        if (fiscalCode.length !== 16) return false;
+        const first15 = fiscalCode.substring(0, 15);
+        const checkDigit = fiscalCode.charAt(15);
+        const expectedCheckDigit = calculateCheckDigit(first15);
+        return checkDigit === expectedCheckDigit;
+    }
+
+    function decodeBirthDateFromFiscalCode(fiscalCode) {
+        if (fiscalCode.length < 11) return null;
+        
+        // Extract year, month, day from fiscal code
+        const yearStr = fiscalCode.substring(6, 8);
+        const monthChar = fiscalCode.substring(8, 9);
+        const dayStr = fiscalCode.substring(9, 11);
+        
+        // Month mapping
+        const monthMap = {
+            'A': '01', 'B': '02', 'C': '03', 'D': '04', 'E': '05', 'H': '06',
+            'L': '07', 'M': '08', 'P': '09', 'R': '10', 'S': '11', 'T': '12'
+        };
+        
+        const month = monthMap[monthChar];
+        if (!month) return null;
+        
+        // Day calculation (subtract 40 if >= 40, indicating female)
+        let day = parseInt(dayStr);
+        const isFemale = day > 40;
+        if (isFemale) day -= 40;
+        
+        // Year calculation (assume 1900s for years > 50, 2000s for years <= 50)
+        let year = parseInt(yearStr);
+        year += (year > 50) ? 1900 : 2000;
+        
+        return {
+            year: year,
+            month: month,
+            day: day.toString().padStart(2, '0'),
+            isFemale: isFemale,
+            dateString: `${year}-${month}-${day.toString().padStart(2, '0')}`
+        };
+    }
+
+    function validateFiscalCode() {
+        const nomeInput = document.getElementById('nome');
+        const cognomeInput = document.getElementById('cognome');
+        const codiceFiscaleInput = document.getElementById('codice_fiscale');
+        const birthDateInput = document.getElementById('data_nascita');
+
+        const nome = nomeInput.value.trim();
+        const cognome = cognomeInput.value.trim();
+        const codiceFiscale = codiceFiscaleInput.value.trim();
+        const birthDate = birthDateInput.value;
+
+        const nomeValidation = document.getElementById('nome_validation');
+        const cognomeValidation = document.getElementById('cognome_validation');
+        const fiscalCodeValidation = document.getElementById('fiscal_code_validation');
+        const birthDateValidation = document.getElementById('birth_date_validation');
+
+        // Clear previous validations
+        [nomeValidation, cognomeValidation, fiscalCodeValidation, birthDateValidation].forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500');
+        });
+
+        // If any required field is empty, don't perform cross-validation
+        if (!nome || !cognome || !codiceFiscale || !birthDate) {
+            return;
+        }
+
+                 // Check fiscal code format
+         if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Formato codice fiscale non valido';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Validate check digit
+         if (!validateCheckDigit(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Il carattere di controllo del codice fiscale non è corretto';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+        // Decode birth date from fiscal code
+        const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+        if (!decodedData) {
+            fiscalCodeValidation.textContent = 'Impossibile decodificare la data di nascita dal codice fiscale';
+            fiscalCodeValidation.classList.add('text-red-500');
+            fiscalCodeValidation.classList.remove('hidden');
+            return;
+        }
+
+        // Compare birth dates
+        if (decodedData.dateString !== birthDate) {
+            birthDateValidation.textContent = `La data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`;
+            birthDateValidation.classList.add('text-red-500');
+            birthDateValidation.classList.remove('hidden');
+            
+            fiscalCodeValidation.textContent = 'Data di nascita non corrispondente';
+            fiscalCodeValidation.classList.add('text-red-500');
+            fiscalCodeValidation.classList.remove('hidden');
+        } else {
+            birthDateValidation.textContent = '✓ Data di nascita verificata';
+            birthDateValidation.classList.add('text-green-500');
+            birthDateValidation.classList.remove('hidden');
+        }
+
+        // Validate name and surname codes
+        const expectedSurnameCode = generateSurnameCode(cognome);
+        const expectedNameCode = generateNameCode(nome);
+        const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+        const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+                 if (fiscalSurnameCode !== expectedSurnameCode) {
+             cognomeValidation.textContent = `Il cognome non corrisponde (inserito: ${expectedSurnameCode}, nel CF: ${fiscalSurnameCode})`;
+             cognomeValidation.classList.add('text-yellow-500');
+             cognomeValidation.classList.remove('hidden');
+         } else {
+             cognomeValidation.textContent = '✓ Cognome verificato';
+             cognomeValidation.classList.add('text-green-500');
+             cognomeValidation.classList.remove('hidden');
+         }
+
+         if (fiscalNameCode !== expectedNameCode) {
+             nomeValidation.textContent = `Il nome non corrisponde (inserito: ${expectedNameCode}, nel CF: ${fiscalNameCode})`;
+             nomeValidation.classList.add('text-yellow-500');
+             nomeValidation.classList.remove('hidden');
+         } else {
+             nomeValidation.textContent = '✓ Nome verificato';
+             nomeValidation.classList.add('text-green-500');
+             nomeValidation.classList.remove('hidden');
+         }
+
+        // Overall fiscal code validation message
+        const allMatches = (decodedData.dateString === birthDate) && 
+                          (fiscalSurnameCode === expectedSurnameCode) && 
+                          (fiscalNameCode === expectedNameCode);
+        
+                 if (allMatches) {
+             fiscalCodeValidation.textContent = '✓ Codice fiscale completamente verificato';
+             fiscalCodeValidation.classList.add('text-green-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else if (decodedData.dateString === birthDate) {
+             fiscalCodeValidation.textContent = '⚠ Data di nascita corretta, verifica nome e cognome';
+             fiscalCodeValidation.classList.add('text-yellow-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         }
+     }
+
+     function validateGuestFiscalCode(prefix) {
+         const nomeInput = document.getElementById(`${prefix}_nome`);
+         const cognomeInput = document.getElementById(`${prefix}_cognome`);
+         const codiceFiscaleInput = document.getElementById(`${prefix}_codice_fiscale`);
+         const birthDateInput = document.getElementById(`${prefix}_data_nascita`);
+
+         if (!nomeInput || !cognomeInput || !codiceFiscaleInput || !birthDateInput) return;
+
+         const nome = nomeInput.value.trim();
+         const cognome = cognomeInput.value.trim();
+         const codiceFiscale = codiceFiscaleInput.value.trim();
+         const birthDate = birthDateInput.value;
+
+         const nomeValidation = document.getElementById(`${prefix}_nome_validation`);
+         const cognomeValidation = document.getElementById(`${prefix}_cognome_validation`);
+         const fiscalCodeValidation = document.getElementById(`${prefix}_fiscal_code_validation`);
+         const birthDateValidation = document.getElementById(`${prefix}_birth_date_validation`);
+
+         if (!nomeValidation || !cognomeValidation || !fiscalCodeValidation || !birthDateValidation) return;
+
+         // Clear previous validations
+         [nomeValidation, cognomeValidation, fiscalCodeValidation, birthDateValidation].forEach(el => {
+             el.classList.add('hidden');
+             el.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500');
+         });
+
+         // If any required field is empty, don't perform cross-validation
+         if (!nome || !cognome || !codiceFiscale || !birthDate) {
+             return;
+         }
+
+         // Check fiscal code format
+         if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Formato codice fiscale non valido (deve essere 16 caratteri: 6 lettere, 2 numeri, 1 lettera, 2 numeri, 1 lettera, 3 numeri, 1 lettera)';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Validate check digit
+         if (!validateCheckDigit(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Il carattere di controllo del codice fiscale non è corretto';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Decode birth date from fiscal code
+         const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+         if (!decodedData) {
+             fiscalCodeValidation.textContent = 'Impossibile decodificare la data di nascita dal codice fiscale';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Compare birth dates
+         if (decodedData.dateString !== birthDate) {
+             birthDateValidation.textContent = `La data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`;
+             birthDateValidation.classList.add('text-red-500');
+             birthDateValidation.classList.remove('hidden');
+             
+             fiscalCodeValidation.textContent = 'Data di nascita non corrispondente';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else {
+             birthDateValidation.textContent = '✓ Data di nascita verificata';
+             birthDateValidation.classList.add('text-green-500');
+             birthDateValidation.classList.remove('hidden');
+         }
+
+         // Validate name and surname codes
+         const expectedSurnameCode = generateSurnameCode(cognome);
+         const expectedNameCode = generateNameCode(nome);
+         const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+         const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+         if (fiscalSurnameCode !== expectedSurnameCode) {
+             cognomeValidation.textContent = `Il cognome non corrisponde (inserito: ${expectedSurnameCode}, nel CF: ${fiscalSurnameCode})`;
+             cognomeValidation.classList.add('text-yellow-500');
+             cognomeValidation.classList.remove('hidden');
+         } else {
+             cognomeValidation.textContent = '✓ Cognome verificato';
+             cognomeValidation.classList.add('text-green-500');
+             cognomeValidation.classList.remove('hidden');
+         }
+
+         if (fiscalNameCode !== expectedNameCode) {
+             nomeValidation.textContent = `Il nome non corrisponde (inserito: ${expectedNameCode}, nel CF: ${fiscalNameCode})`;
+             nomeValidation.classList.add('text-yellow-500');
+             nomeValidation.classList.remove('hidden');
+         } else {
+             nomeValidation.textContent = '✓ Nome verificato';
+             nomeValidation.classList.add('text-green-500');
+             nomeValidation.classList.remove('hidden');
+         }
+
+         // Overall fiscal code validation message
+         const allMatches = (decodedData.dateString === birthDate) && 
+                           (fiscalSurnameCode === expectedSurnameCode) && 
+                           (fiscalNameCode === expectedNameCode);
+         
+         if (allMatches) {
+             fiscalCodeValidation.textContent = '✓ Codice fiscale completamente verificato';
+             fiscalCodeValidation.classList.add('text-green-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else if (decodedData.dateString === birthDate) {
+             fiscalCodeValidation.textContent = '⚠ Data di nascita corretta, verifica nome e cognome';
+             fiscalCodeValidation.classList.add('text-yellow-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         }
+     }
+
+     function validateAllFiscalCodes() {
+         let hasErrors = false;
+         const errorMessages = [];
+
+         // Helper function to validate a single fiscal code
+         function validateSingleFiscalCode(nome, cognome, codiceFiscale, birthDate, personLabel) {
+             // Check format
+             if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Formato codice fiscale non valido`);
+                 return;
+             }
+
+             // Check control digit
+             if (!validateCheckDigit(codiceFiscale)) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Carattere di controllo del codice fiscale non corretto`);
+                 return;
+             }
+
+             // Check birth date correspondence
+             const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+             if (!decodedData) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Impossibile decodificare la data dal codice fiscale`);
+                 return;
+             }
+
+             if (decodedData.dateString !== birthDate) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`);
+             }
+
+             // Check name and surname correspondence
+             const expectedSurnameCode = generateSurnameCode(cognome);
+             const expectedNameCode = generateNameCode(nome);
+             const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+             const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+             if (fiscalSurnameCode !== expectedSurnameCode) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Cognome non corrisponde al codice fiscale (inserito: ${expectedSurnameCode}, trovato: ${fiscalSurnameCode})`);
+             }
+
+             if (fiscalNameCode !== expectedNameCode) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Nome non corrisponde al codice fiscale (inserito: ${expectedNameCode}, trovato: ${fiscalNameCode})`);
+             }
+         }
+
+         // Validate main form
+         const mainForm = {
+             nome: document.getElementById('nome').value.trim(),
+             cognome: document.getElementById('cognome').value.trim(),
+             codiceFiscale: document.getElementById('codice_fiscale').value.trim(),
+             birthDate: document.getElementById('data_nascita').value
+         };
+
+         if (mainForm.nome && mainForm.cognome && mainForm.codiceFiscale && mainForm.birthDate) {
+             validateSingleFiscalCode(mainForm.nome, mainForm.cognome, mainForm.codiceFiscale, mainForm.birthDate, 'Capogruppo');
+         }
+
+         // Validate guest forms
+         document.querySelectorAll('.guest-block').forEach((block, index) => {
+             const inputs = {
+                 nome: block.querySelector('input[name*="_nome"]'),
+                 cognome: block.querySelector('input[name*="_cognome"]'),
+                 codiceFiscale: block.querySelector('input[name*="_codice_fiscale"]'),
+                 birthDate: block.querySelector('input[name*="_data_nascita"]')
+             };
+
+             if (inputs.nome && inputs.cognome && inputs.codiceFiscale && inputs.birthDate) {
+                 const values = {
+                     nome: inputs.nome.value.trim(),
+                     cognome: inputs.cognome.value.trim(),
+                     codiceFiscale: inputs.codiceFiscale.value.trim(),
+                     birthDate: inputs.birthDate.value
+                 };
+
+                 if (values.nome && values.cognome && values.codiceFiscale && values.birthDate) {
+                     const guestLabel = `Ospite ${index + 1}`;
+                     validateSingleFiscalCode(values.nome, values.cognome, values.codiceFiscale, values.birthDate, guestLabel);
+                 }
+             }
+         });
+
+         return { hasErrors, errorMessages };
+     }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
