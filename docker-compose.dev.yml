@@ -1,0 +1,20 @@
+# Development override for docker-compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  event-form-suite:
+    build:
+      target: development
+    environment:
+      - NODE_ENV=development
+    volumes:
+      # Mount source code for live reloading
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    # Expose additional ports for debugging
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debug port 
