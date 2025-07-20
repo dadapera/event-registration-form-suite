@@ -38,7 +38,7 @@
       display: none !important;
     }
   </style>
-  </head>
+</head>
 <body class="bg-gray-100 text-gray-900">
   <!-- ID Validation Modal -->
   <div id="idModal" class="modal-overlay hidden">
@@ -127,12 +127,12 @@
           <div class="bg-white p-3 rounded border">
             <label class="block text-sm font-medium text-blue-700 mb-1">Scheda Numero</label>
             <span id="schedaNumeroDisplay" class="text-lg font-mono font-bold text-blue-900 block">-</span>
-          </div>
+        </div>
           <div class="bg-white p-3 rounded border">
             <label class="block text-sm font-medium text-blue-700 mb-1">Codice Cliente</label>
             <span id="codiceClienteDisplay" class="text-lg font-mono font-bold text-blue-900 block">-</span>
-          </div>
-        </div>
+      </div>
+      </div>
       </div>
 
 
@@ -515,7 +515,15 @@
       toggleCompanyBilling();
       updatePricingRulesDisplay();
       calculateTotal();
-      hideRoom2(); // Ensure room 2 is hidden by default
+      
+      // Initialize guest button states
+      updateRoom1ButtonsState();
+      updateRoom2ButtonsState();
+      
+      // Ensure room 2 is hidden by default only if no guests exist
+      if (guestRoom2Count === 0) {
+        hideRoom2();
+      }
 
       // Add event listeners if not already added
       const form = document.getElementById('registrationForm');
@@ -660,91 +668,73 @@
     });
     
     async function downloadSummaryPDF() {
-        const { jsPDF } = window.jspdf;
-        const summaryElement = document.getElementById('modalSummary');
-        
-        // Style the element for better PDF appearance
-        summaryElement.style.backgroundColor = '#ffffff';
-        summaryElement.style.padding = '20px';
-        summaryElement.style.maxWidth = '800px';
-        summaryElement.style.margin = '0 auto';
-
         try {
-            const canvas = await html2canvas(summaryElement, { 
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                height: summaryElement.scrollHeight,
-                windowWidth: summaryElement.scrollWidth
-            });
+            if (!lastSubmissionId) {
+                alert('Errore: ID registrazione non trovato.');
+                return;
+            }
 
-            // Reset element styles
-            summaryElement.style.backgroundColor = '';
-            summaryElement.style.padding = '';
-            summaryElement.style.maxWidth = '';
-            summaryElement.style.margin = '';
+            console.log(`Requesting PDF generation for registration ID: ${lastSubmissionId}`);
+            
+            // Show loading state
+            const downloadButton = document.getElementById('downloadPdfButton');
+            const originalText = downloadButton.textContent;
+            downloadButton.textContent = 'Generazione PDF...';
+            downloadButton.disabled = true;
 
-            const pdf = new jsPDF({
-                orientation: 'p',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            // Calculate how many pages we need
-            const totalPages = Math.ceil(imgHeight / pdfHeight);
-            
-            console.log(`PDF Generation: Canvas size: ${canvas.width}x${canvas.height}, PDF pages needed: ${totalPages}`);
-            
-            // Create image from canvas
-            const img = new Image();
-            img.src = canvas.toDataURL('image/png');
-            
-            // Wait for image to load
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-            });
-            
-            // Add pages and split content
-            for (let page = 0; page < totalPages; page++) {
-                if (page > 0) {
-                    pdf.addPage();
+            const response = await fetch(`/${instanceName}/api/generate-pdf/${lastSubmissionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-                
-                // Calculate the Y position for this page
-                const startY = -(page * pdfHeight * canvas.height) / imgHeight;
-                const pageImgHeight = Math.min(pdfHeight, imgHeight - (page * pdfHeight));
-                
-                // Add the image with appropriate positioning
-                pdf.addImage(
-                    canvas.toDataURL('image/png'), 
-                    'PNG', 
-                    0, 
-                    startY, 
-                    imgWidth, 
-                    imgHeight
-                );
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Errore nella generazione del PDF');
+            }
+
+            // Get the PDF blob
+            const blob = await response.blob();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Extract filename from response headers or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'riepilogo-iscrizione.pdf';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
             }
             
-            const safeEventName = lastEventName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-            pdf.save(`riepilogo-iscrizione-${safeEventName}.pdf`);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
             
-            console.log(`PDF generated successfully with ${totalPages} pages`);
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            console.log('PDF downloaded successfully');
+            
+            // Reset button state
+            downloadButton.textContent = originalText;
+            downloadButton.disabled = false;
             
         } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Errore durante la generazione del PDF. Riprova.');
+            console.error('Error downloading PDF:', error);
+            alert(`Errore durante la generazione del PDF: ${error.message}`);
             
-            // Reset styles in case of error
-            summaryElement.style.backgroundColor = '';
-            summaryElement.style.padding = '';
-            summaryElement.style.maxWidth = '';
-            summaryElement.style.margin = '';
+            // Reset button state
+            const downloadButton = document.getElementById('downloadPdfButton');
+            downloadButton.textContent = 'Scarica Riepilogo PDF';
+            downloadButton.disabled = false;
         }
     }
 
@@ -909,24 +899,42 @@
     }
 
     function handleFormChange(e) {
-      if (e.target.matches('input[name*="data_nascita"], select[name="partenza"]')) calculateTotal();
+      if (e.target.matches('input[name*="data_nascita"], select[name="partenza"]')) {
+        console.log('Birth date or departure changed, recalculating...');
+        calculateTotal();
+      }
       if (e.target.matches('#fatturazioneAziendale')) toggleCompanyBilling();
       if (e.target.matches('.use-capogruppo-address-checkbox')) handleAddressCheckbox(e.target);
     }
     
     function handleFormClick(e) {
         if (e.target.matches('.remove-guest-button')) {
-            const roomType = e.target.dataset.removeRoom;
-            e.target.closest('.guest-block').remove();
+            const guestBlock = e.target.closest('.guest-block');
+            const roomType = guestBlock.dataset.removeRoom;
+            
+            console.log(`Removing guest from ${roomType}`);
+            console.log(`Before removal - Room1: ${companionRoom1Count}, Room2: ${guestRoom2Count}`);
+            
+            // Remove the guest block
+            guestBlock.remove();
+            
             if (roomType === 'room1') {
-                companionRoom1Count = document.getElementById('companionFieldsRoom1').children.length;
-                document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
-                document.getElementById('room1MaxReachedText').classList.toggle('hidden', companionRoom1Count < MAX_COMPANIONS_ROOM1);
+                // Sync count with actual DOM state
+                const newCount = document.getElementById('companionFieldsRoom1').children.length;
+                console.log(`Room1 - DOM children count after removal: ${newCount}`);
+                companionRoom1Count = newCount;
+                console.log(`Room1 - Updated companionRoom1Count to: ${companionRoom1Count}`);
+                updateRoom1ButtonsState();
             } else if (roomType === 'room2') {
-                guestRoom2Count = document.getElementById('room2GuestFields').children.length;
-                document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
-                document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
+                // Sync count with actual DOM state
+                const newCount = document.getElementById('room2GuestFields').children.length;
+                console.log(`Room2 - DOM children count after removal: ${newCount}`);
+                guestRoom2Count = newCount;
+                console.log(`Room2 - Updated guestRoom2Count to: ${guestRoom2Count}`);
+                updateRoom2ButtonsState();
             }
+            
+            console.log(`After removal - Room1: ${companionRoom1Count}, Room2: ${guestRoom2Count}`);
             calculateTotal();
         }
     }
@@ -935,8 +943,7 @@
     function resetFullUI() {
         document.getElementById('companionFieldsRoom1').innerHTML = '';
         companionRoom1Count = 0;
-        document.getElementById('addCompanionRoom1Button').classList.remove('hidden');
-        document.getElementById('room1MaxReachedText').classList.add('hidden');
+        updateRoom1ButtonsState();
         hideRoom2();
         calculateTotal();
     }
@@ -952,32 +959,150 @@
         document.getElementById('addRoom2Button').classList.remove('hidden');
         document.getElementById('room2GuestFields').innerHTML = '';
         guestRoom2Count = 0;
-        document.getElementById('addGuestRoom2Button').classList.remove('hidden');
-        document.getElementById('room2MaxReachedText').classList.add('hidden');
+        updateRoom2ButtonsState();
     }
 
     function addCompanionRoom1() {
+      console.log(`=== ADD ROOM 1 GUEST ===`);
+      console.log(`Before: companionRoom1Count=${companionRoom1Count}, Max=${MAX_COMPANIONS_ROOM1}`);
+      console.log(`DOM children before: ${document.getElementById('companionFieldsRoom1').children.length}`);
+      
       if (companionRoom1Count < MAX_COMPANIONS_ROOM1) {
         companionRoom1Count++;
+        console.log(`Adding Room 1 guest #${companionRoom1Count}`);
             const newBlock = createGuestBlockHTML('room1', companionRoom1Count);
             document.getElementById('companionFieldsRoom1').insertAdjacentHTML('beforeend', newBlock);
+            console.log(`DOM children after insert: ${document.getElementById('companionFieldsRoom1').children.length}`);
             populateProvinceDropdown(document.querySelector(`[name="ospite_room1_${companionRoom1Count}_provincia"]`));
         calculateTotal();
-            document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
-            document.getElementById('room1MaxReachedText').classList.toggle('hidden', companionRoom1Count < MAX_COMPANIONS_ROOM1);
+            updateRoom1ButtonsState();
+      } else {
+        console.log('Room 1 add guest blocked - max reached');
       }
+      console.log(`=== END ADD ROOM 1 GUEST ===`);
     }
 
     function addGuestRoom2() {
+      console.log(`=== ADD ROOM 2 GUEST ===`);
+      console.log(`Before: guestRoom2Count=${guestRoom2Count}, Max=${MAX_GUESTS_ROOM2}`);
+      console.log(`DOM children before: ${document.getElementById('room2GuestFields').children.length}`);
+      
       if (guestRoom2Count < MAX_GUESTS_ROOM2) {
         guestRoom2Count++;
+        console.log(`Adding Room 2 guest #${guestRoom2Count}`);
             const newBlock = createGuestBlockHTML('room2', guestRoom2Count);
             document.getElementById('room2GuestFields').insertAdjacentHTML('beforeend', newBlock);
+            console.log(`DOM children after insert: ${document.getElementById('room2GuestFields').children.length}`);
             populateProvinceDropdown(document.querySelector(`[name="ospite_room2_${guestRoom2Count}_provincia"]`));
         calculateTotal();
-            document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
-            document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
+            updateRoom2ButtonsState();
+      } else {
+        console.log('Room 2 add guest blocked - max reached');
+      }
+      console.log(`=== END ADD ROOM 2 GUEST ===`);
+    }
+
+    // Debug function to check current state (call from console)
+    function debugGuestState() {
+        console.log('=== GUEST STATE DEBUG ===');
+        console.log('Counters:', { companionRoom1Count, guestRoom2Count });
+        console.log('Max limits:', { MAX_COMPANIONS_ROOM1, MAX_GUESTS_ROOM2 });
+        
+        const room1Blocks = document.querySelectorAll('#companionFieldsRoom1 .guest-block');
+        const room2Blocks = document.querySelectorAll('#room2GuestFields .guest-block');
+        console.log('DOM blocks:', { room1: room1Blocks.length, room2: room2Blocks.length });
+        
+        console.log('Room 1 guest info:');
+        room1Blocks.forEach((block, i) => {
+            const birthInput = block.querySelector('[name*="data_nascita"]');
+            console.log(`  Guest ${i+1}: birth="${birthInput?.value}", age=${calculateAge(birthInput?.value)}`);
+        });
+        
+        console.log('Room 2 guest info:');
+        room2Blocks.forEach((block, i) => {
+            const birthInput = block.querySelector('[name*="data_nascita"]');
+            console.log(`  Guest ${i+1}: birth="${birthInput?.value}", age=${calculateAge(birthInput?.value)}`);
+        });
+        
+        console.log('Button states:');
+        const addBtn1 = document.getElementById('addCompanionRoom1Button');
+        const maxText1 = document.getElementById('room1MaxReachedText');
+        const addBtn2 = document.getElementById('addGuestRoom2Button');
+        const maxText2 = document.getElementById('room2MaxReachedText');
+        
+        console.log('Room 1:', { 
+            addButtonHidden: addBtn1?.classList.contains('hidden'),
+            maxTextHidden: maxText1?.classList.contains('hidden')
+        });
+        console.log('Room 2:', { 
+            addButtonHidden: addBtn2?.classList.contains('hidden'),
+            maxTextHidden: maxText2?.classList.contains('hidden')
+        });
+        
+        console.log('=== END DEBUG ===');
+    }
+    
+    // Make debug function globally available
+    window.debugGuestState = debugGuestState;
+    window.recalculate = calculateTotal;
+
+    // Helper functions to manage button states consistently
+    function updateRoom1ButtonsState() {
+        const addButton = document.getElementById('addCompanionRoom1Button');
+        const maxReachedText = document.getElementById('room1MaxReachedText');
+        
+        if (!addButton || !maxReachedText) {
+            console.warn('Room 1 button elements not found');
+            console.log('addButton:', addButton);
+            console.log('maxReachedText:', maxReachedText);
+            return;
         }
+        
+        console.log(`Room 1 state: ${companionRoom1Count}/${MAX_COMPANIONS_ROOM1} guests`);
+        console.log('Add button current classes:', addButton.className);
+        console.log('Max text current classes:', maxReachedText.className);
+        
+        if (companionRoom1Count >= MAX_COMPANIONS_ROOM1) {
+            addButton.classList.add('hidden');
+            maxReachedText.classList.remove('hidden');
+            console.log('Room 1: Max reached - hiding add button, showing max text');
+        } else {
+            addButton.classList.remove('hidden');
+            maxReachedText.classList.add('hidden');
+            console.log('Room 1: Below max - showing add button, hiding max text');
+        }
+        
+        console.log('Add button final classes:', addButton.className);
+        console.log('Max text final classes:', maxReachedText.className);
+    }
+
+    function updateRoom2ButtonsState() {
+        const addButton = document.getElementById('addGuestRoom2Button');
+        const maxReachedText = document.getElementById('room2MaxReachedText');
+        
+        if (!addButton || !maxReachedText) {
+            console.warn('Room 2 button elements not found');
+            console.log('addButton:', addButton);
+            console.log('maxReachedText:', maxReachedText);
+            return;
+        }
+        
+        console.log(`Room 2 state: ${guestRoom2Count}/${MAX_GUESTS_ROOM2} guests`);
+        console.log('Add button current classes:', addButton.className);
+        console.log('Max text current classes:', maxReachedText.className);
+        
+        if (guestRoom2Count >= MAX_GUESTS_ROOM2) {
+            addButton.classList.add('hidden');
+            maxReachedText.classList.remove('hidden');
+            console.log('Room 2: Max reached - hiding add button, showing max text');
+        } else {
+            addButton.classList.remove('hidden');
+            maxReachedText.classList.add('hidden');
+            console.log('Room 2: Below max - showing add button, hiding max text');
+        }
+        
+        console.log('Add button final classes:', addButton.className);
+        console.log('Max text final classes:', maxReachedText.className);
     }
 
     function handleAddressCheckbox(checkbox) {
@@ -1030,11 +1155,38 @@
     }
 
     function calculateAge(birthDate) {
-        if (!birthDate || isNaN(new Date(birthDate))) return 0;
-      const birth = new Date(birthDate);
-      let age = calculationDate.getFullYear() - birth.getFullYear();
+        if (!birthDate) {
+            console.warn('calculateAge: No birth date provided');
+            return 0;
+        }
+        
+        const birth = new Date(birthDate);
+        if (isNaN(birth.getTime())) {
+            console.warn('calculateAge: Invalid birth date:', birthDate);
+            return 0;
+        }
+        
+        // Check for obviously invalid years (incomplete dates while typing)
+        const birthYear = birth.getFullYear();
+        const currentYear = calculationDate.getFullYear();
+        
+        if (birthYear < 1900 || birthYear > currentYear) {
+            console.warn(`calculateAge: Invalid birth year ${birthYear}, treating as incomplete date`);
+            return 0;
+        }
+        
+      let age = currentYear - birthYear;
         const m = calculationDate.getMonth() - birth.getMonth();
         if (m < 0 || (m === 0 && calculationDate.getDate() < birth.getDate())) age--;
+        
+        // Validate reasonable age range
+        if (age < 0 || age > 150) {
+            console.warn(`calculateAge: Unrealistic age ${age} for date ${birthDate}`);
+            return 0;
+        }
+        
+        // Only log age calculation for debugging if needed
+        // console.log(`calculateAge: ${birthDate} -> ${age} years old`);
       return age;
     }
 
@@ -1046,6 +1198,9 @@
     }
     
     function calculateTotal() {
+        console.log('=== CALCULATE TOTAL START ===');
+        console.log(`Current state: Room1=${companionRoom1Count}, Room2=${guestRoom2Count}`);
+        
         allGuestsWithCostsForPayload = [];
       calculatedRoomCounts = { camera_singola: 0, camera_doppia: 0, camera_tripla: 0, camera_quadrupla: 0 };
         const partenzaSelect = document.getElementById('partenza');
@@ -1055,22 +1210,94 @@
             costBreakdownEl.innerHTML = '<span class="text-red-500 font-medium">Selezionare Aeroporto</span>';
             return;
         }
-        const packageTypeKey = { 'autonomo': 'solo_land', 'bgy': 'volo_bgy', 'mpx': 'volo_mxp' }[partenzaSelect.value];
+        const packageTypeMapping = { 
+            'autonomo': 'solo_land', 
+            'fco': 'volo_bgy',  // FCO uses BGY pricing
+            'nap': 'volo_bgy',  // NAP uses BGY pricing  
+            'bcn': 'volo_bgy',  // BCN uses BGY pricing
+            'mpx': 'volo_mxp'   // MXP has its own pricing
+        };
+        const packageTypeKey = packageTypeMapping[partenzaSelect.value];
+        
+        if (!packageTypeKey) {
+            console.error('Invalid departure selection:', partenzaSelect.value);
+            costBreakdownEl.innerHTML = '<span class="text-red-500 font-medium">Selezione partenza non valida</span>';
+            return;
+        }
+        
+        console.log(`Package type: ${partenzaSelect.value} -> ${packageTypeKey}`);
+        
+        // NOTE: Fixed packageTypeKey mapping - FCO/NAP/BCN use BGY pricing, MXP has own pricing
         
         let totalCost = 0, totalPeople = 0, costBreakdownHTML = '';
         
+        // Validate counter vs DOM state
+        const actualRoom1Guests = document.querySelectorAll('#companionFieldsRoom1 .guest-block').length;
+        const actualRoom2Guests = document.querySelectorAll('#room2GuestFields .guest-block').length;
+        console.log(`Counter vs DOM: Room1 ${companionRoom1Count}/${actualRoom1Guests}, Room2 ${guestRoom2Count}/${actualRoom2Guests}`);
+        
         // --- Process Room 1 ---
-        const room1Occupants = [{ age: calculateAge(document.querySelector('[name="data_nascita"]').value), name: "Capogruppo", type: 'capogruppo', form_index: 0 }];
-        document.querySelectorAll('#companionFieldsRoom1 .guest-block').forEach((block, i) => {
-            room1Occupants.push({ age: calculateAge(block.querySelector('[name*="data_nascita"]').value), name: `Ospite ${i+1}`, type: 'ospite_room1', form_index: i+1 });
+        const capogruppoAge = calculateAge(document.querySelector('[name="data_nascita"]').value);
+        const room1Occupants = [{ age: capogruppoAge, name: "Capogruppo", type: 'capogruppo', form_index: 0 }];
+        
+        console.log(`Processing Room 1 - companionRoom1Count: ${companionRoom1Count}`);
+        console.log(`Capogruppo age: ${capogruppoAge}`);
+        
+        const guestBlocks = document.querySelectorAll('#companionFieldsRoom1 .guest-block');
+        console.log('DOM guest blocks found:', guestBlocks.length);
+        
+        // Process each guest block with detailed debugging
+        guestBlocks.forEach((block, i) => {
+            const birthDateInput = block.querySelector(`input[name*="data_nascita"]`);
+            const age = calculateAge(birthDateInput?.value);
+            console.log(`Adding Room 1 guest ${i+1}, age: ${age}`);
+            
+            room1Occupants.push({ age: age, name: `Ospite ${i+1}`, type: 'ospite_room1', form_index: i+1 });
         });
+        
+        console.log('Final room1Occupants:', room1Occupants);
+        console.log('Expected vs actual guests:', { expected: companionRoom1Count, actual: guestBlocks.length });
         
         if(room1Occupants.length > 0) {
             totalPeople += room1Occupants.length;
             costBreakdownHTML += `<p class='font-semibold mt-1 text-blue-700'>Camera 1:</p>`;
+            
+            // Calculate paying guests (excluding first 2 who are free, and babies under 2)
+            const payingGuests = room1Occupants.slice(2).filter(o => o.age >= 2);
+            const totalPayingInRoom1 = payingGuests.length;
+            
             room1Occupants.forEach((occupant, i) => {
-                let cost = (i < 2) ? 0 : getOccupantCost(occupant.age, i - 1, packageTypeKey, room1Occupants.length - 2);
-                let label = (i < 2) ? "GRATUITO" : getOccupantLabel(occupant.age, i-1, packageTypeKey, room1Occupants.length - 2);
+                let cost, label;
+                
+                                 if (i < 2) {
+                     // First 2 occupants are free
+                     cost = 0;
+                     label = "GRATUITO";
+                 } else {
+                     // For 3rd+ occupants, calculate their position among paying guests
+                     const payingPosition = payingGuests.findIndex(g => g === occupant) + 1;
+                     
+                     // Validate age
+                     if (occupant.age > 150 || occupant.age < 0) {
+                         console.log(`Invalid age detected: ${occupant.age} for ${occupant.name}`);
+                         cost = 0;
+                         label = "Età non valida - inserire data corretta";
+                     } else {
+                         cost = getOccupantCost(occupant.age, payingPosition, packageTypeKey, totalPayingInRoom1);
+                         label = getOccupantLabel(occupant.age, payingPosition, packageTypeKey, totalPayingInRoom1);
+                         
+                         // Debug cost calculation
+                         if (cost === 0 && occupant.age >= 2) {
+                             console.log(`Invalid cost for ${occupant.name}:`, {
+                                 age: occupant.age,
+                                 payingPosition: payingPosition,
+                                 packageTypeKey: packageTypeKey,
+                                 totalPayingInRoom1: totalPayingInRoom1
+                             });
+                         }
+                     }
+                 }
+                
                 totalCost += cost;
                 costBreakdownHTML += `<div>${occupant.name} (Età: ${occupant.age}) - ${label}: €${cost.toFixed(2)}</div>`;
                 if(occupant.type !== 'capogruppo') allGuestsWithCostsForPayload.push(occupant);
@@ -1081,9 +1308,19 @@
         // --- Process Room 2 ---
         if (!document.getElementById('room2Section').classList.contains('hidden')) {
             const room2Occupants = [];
+            
+            console.log(`Processing Room 2 - guestRoom2Count: ${guestRoom2Count}`);
+            console.log('Room 2 DOM elements found:', document.querySelectorAll('#room2GuestFields .guest-block').length);
+            
             document.querySelectorAll('#room2GuestFields .guest-block').forEach((block, i) => {
-                room2Occupants.push({ age: calculateAge(block.querySelector('[name*="data_nascita"]').value), name: `Ospite ${i+1}`, type: 'ospite_room2', form_index: i+1 });
+                const birthDateInput = block.querySelector('[name*="data_nascita"]');
+                const age = calculateAge(birthDateInput?.value);
+                console.log(`Adding Room 2 guest ${i+1}, age: ${age}`);
+                room2Occupants.push({ age: age, name: `Ospite ${i+1}`, type: 'ospite_room2', form_index: i+1 });
             });
+            
+            console.log('Final room2Occupants:', room2Occupants);
+            
             if (room2Occupants.length > 0) {
                 totalPeople += room2Occupants.length;
                 costBreakdownHTML += `<p class='font-semibold mt-2 text-blue-700'>Camera 2:</p>`;
@@ -1101,11 +1338,25 @@
             }
         }
         
+        // Sync counters with actual DOM state if they're out of sync
+        if (companionRoom1Count !== actualRoom1Guests) {
+            console.warn(`Syncing Room1 counter: ${companionRoom1Count} -> ${actualRoom1Guests}`);
+            companionRoom1Count = actualRoom1Guests;
+            updateRoom1ButtonsState();
+        }
+        if (guestRoom2Count !== actualRoom2Guests) {
+            console.warn(`Syncing Room2 counter: ${guestRoom2Count} -> ${actualRoom2Guests}`);
+            guestRoom2Count = actualRoom2Guests;
+            updateRoom2ButtonsState();
+        }
+
         costBreakdownEl.innerHTML = costBreakdownHTML || 'Aggiungi partecipanti.';
         document.getElementById('totalPersone').textContent = totalPeople;
       document.getElementById('airport').textContent = partenzaSelect.selectedOptions[0].text;
         document.getElementById('prezzoTotale').textContent = `€${totalCost.toFixed(2)}`;
         document.getElementById('roomCountsDisplay').textContent = Object.entries(calculatedRoomCounts).filter(([,val]) => val > 0).map(([key, val]) => `${val} ${key.replace(/_/g, ' ')}`).join(', ') || 'Nessuna';
+        
+        console.log(`=== CALCULATE TOTAL END === Total People: ${totalPeople}, Total Cost: €${totalCost.toFixed(2)}`);
     }
 
     function getOccupantCost(age, positionInPayingGroup, packageTypeKey, totalPayingInRoom) {
@@ -1573,8 +1824,6 @@
      }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   
   
   <!-- Success Modal -->

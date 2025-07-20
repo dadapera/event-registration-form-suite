@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const puppeteer = require('puppeteer');
 const log = require('../../utils/logger'); // Note the path change
 const { sendMail } = require('../../utils/mailer');
 
@@ -94,6 +95,201 @@ function lookupUserData(userId, instancePath) {
     return null;
 }
 
+// Function to generate PDF summary content
+function generateSummaryHTML(registrationData, partenzaText) {
+    return `
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Riepilogo Iscrizione</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    background: white;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #1e40af;
+                    padding-bottom: 15px;
+                }
+                .section {
+                    margin: 20px 0;
+                    page-break-inside: avoid;
+                }
+                .section-title {
+                    font-weight: bold;
+                    color: #1e40af;
+                    border-bottom: 1px solid #1e40af;
+                    padding-bottom: 5px;
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                }
+                .grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 10px;
+                }
+                .grid-full {
+                    grid-column: 1 / -1;
+                }
+                .guest-block {
+                    border: 1px solid #e5e7eb;
+                    border-radius: 5px;
+                    padding: 15px;
+                    margin: 10px 0;
+                    page-break-inside: avoid;
+                }
+                .guest-title {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    color: #1e40af;
+                }
+                .total-cost {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #1e40af;
+                    margin-top: 15px;
+                }
+                p {
+                    margin: 8px 0;
+                    word-wrap: break-word;
+                }
+                strong {
+                    font-weight: 600;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .container { box-shadow: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Riepilogo Iscrizione</h1>
+                    <p>ID Registrazione: ${registrationData.id}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Dettagli Evento</div>
+                    <p><strong>ID Utente:</strong> ${registrationData.user_id}</p>
+                    <p><strong>Evento:</strong> ${registrationData.evento}</p>
+                    <p><strong>Aeroporto di Partenza:</strong> ${partenzaText}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Dati Capogruppo</div>
+                    <div class="grid">
+                        <p><strong>Nome:</strong> ${registrationData.nome}</p>
+                        <p><strong>Cognome:</strong> ${registrationData.cognome}</p>
+                        <p><strong>Data di Nascita:</strong> ${new Date(registrationData.data_nascita).toLocaleDateString('it-IT')}</p>
+                        <p><strong>Codice Fiscale:</strong> ${registrationData.codice_fiscale}</p>
+                        <p><strong>Email:</strong> ${registrationData.email}</p>
+                        <p><strong>Cellulare:</strong> ${registrationData.cellulare}</p>
+                    </div>
+                    <p><strong>Indirizzo:</strong> ${registrationData.indirizzo}</p>
+                </div>
+
+                ${registrationData.ospiti && registrationData.ospiti.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Accompagnatori</div>
+                    ${registrationData.ospiti.map((ospite, index) => `
+                        <div class="guest-block">
+                            <div class="guest-title">Ospite ${index + 1}</div>
+                            <div class="grid">
+                                <p><strong>Nome:</strong> ${ospite.nome}</p>
+                                <p><strong>Cognome:</strong> ${ospite.cognome}</p>
+                                <p><strong>Data di Nascita:</strong> ${ospite.data_nascita ? new Date(ospite.data_nascita).toLocaleDateString('it-IT') : 'N/D'}</p>
+                                <p><strong>Codice Fiscale:</strong> ${ospite.codice_fiscale || 'N/D'}</p>
+                            </div>
+                            <p><strong>Indirizzo:</strong> ${ospite.indirizzo || 'Non specificato'}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                ${registrationData.fatturazione_aziendale ? `
+                <div class="section">
+                    <div class="section-title">Dati Fatturazione Aziendale</div>
+                    <p class="grid-full"><strong>Ragione Sociale:</strong> ${registrationData.dati_fatturazione.ragione_sociale}</p>
+                    <div class="grid">
+                        <p><strong>Partita IVA:</strong> ${registrationData.dati_fatturazione.partita_iva}</p>
+                        <p><strong>Codice Fiscale Azienda:</strong> ${registrationData.dati_fatturazione.codice_fiscale_azienda || 'N/D'}</p>
+                        <p><strong>Codice SDI:</strong> ${registrationData.dati_fatturazione.codice_sdi || 'N/D'}</p>
+                        <p><strong>PEC:</strong> ${registrationData.dati_fatturazione.pec_azienda || 'N/D'}</p>
+                    </div>
+                    <p><strong>Sede Legale:</strong> ${registrationData.dati_fatturazione.indirizzo_sede_legale}</p>
+                </div>
+                ` : ''}
+
+                <div class="section">
+                    <div class="section-title">Riepilogo Camere e Costi</div>
+                    <p><strong>Composizione Camere:</strong> ${
+                        Object.entries(registrationData)
+                            .filter(([key, value]) => key.startsWith('camera_') && value > 0)
+                            .map(([key, value]) => `${value} ${key.replace(/_/g, ' ')}`)
+                            .join(', ') || 'N/D'
+                    }</p>
+                    <div class="total-cost">
+                        <strong>Costo Totale: €${registrationData.costo_totale_gruppo.toFixed(2)}</strong>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+}
+
+// Function to generate PDF using Puppeteer
+async function generateRegistrationPDF(registrationData, partenzaText, eventName) {
+    let browser;
+    try {
+        browser = await puppeteer.launch({
+            headless: 'new',
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        
+        const page = await browser.newPage();
+        const htmlContent = generateSummaryHTML(registrationData, partenzaText);
+        
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '20px',
+                right: '20px',
+                bottom: '20px',
+                left: '20px'
+            }
+        });
+        
+        await browser.close();
+        return pdfBuffer;
+        
+    } catch (error) {
+        if (browser) {
+            await browser.close();
+        }
+        throw error;
+    }
+}
+
 function createTables(db, instanceName) {
     db.serialize(() => {
         db.run(`CREATE TABLE IF NOT EXISTS registrazioni (
@@ -174,6 +370,100 @@ module.exports = function(db, instanceName, config) {
                 found: false,
                 error: 'Internal server error'
             });
+        }
+    });
+
+    router.post('/api/generate-pdf/:registrationId', async (req, res) => {
+        const registrationId = req.params.registrationId;
+        log('DEBUG', `Request to generate PDF for registration ${registrationId} in instance '${instanceName}'`);
+        
+        try {
+            // Get registration data from database
+            const query = `
+                SELECT 
+                    r.*, 
+                    df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                    df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+                FROM registrazioni r
+                LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
+                WHERE r.id = ?
+            `;
+            
+            db.get(query, [registrationId], async (err, registration) => {
+                if (err) {
+                    log('ERROR', `DB error getting registration ${registrationId}: ${err.message}`);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                if (!registration) {
+                    log('WARN', `Registration ${registrationId} not found for PDF generation`);
+                    return res.status(404).json({ error: 'Registration not found' });
+                }
+                
+                // Get guests data
+                const guestsQuery = `
+                    SELECT nome, cognome, data_nascita, codice_fiscale, indirizzo
+                    FROM accompagnatori_dettagli
+                    WHERE registrazione_id = ?
+                    ORDER BY id
+                `;
+                
+                db.all(guestsQuery, [registrationId], async (err, guests) => {
+                    if (err) {
+                        log('ERROR', `DB error getting guests for registration ${registrationId}: ${err.message}`);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    // Prepare registration data with guests
+                    const registrationData = {
+                        ...registration,
+                        ospiti: guests || [],
+                        dati_fatturazione: registration.fatturazione_aziendale ? {
+                            ragione_sociale: registration.ragione_sociale,
+                            partita_iva: registration.partita_iva,
+                            codice_fiscale_azienda: registration.codice_fiscale_azienda,
+                            indirizzo_sede_legale: registration.indirizzo_sede_legale,
+                            codice_sdi: registration.codice_sdi,
+                            pec_azienda: registration.pec_azienda
+                        } : null
+                    };
+                    
+                    // Map partenza to readable text
+                    const partenzaMapping = {
+                        'autonomo': 'Arrivo autonomo',
+                        'fco': 'FCO - Roma Fiumicino',
+                        'nap': 'NAP - Napoli',
+                        'bcn': 'BCN - Barcellona',
+                        'mpx': 'MXP - Malpensa'
+                    };
+                    const partenzaText = partenzaMapping[registration.partenza] || registration.partenza;
+                    
+                    try {
+                        // Generate PDF
+                        const pdfBuffer = await generateRegistrationPDF(registrationData, partenzaText, registration.evento);
+                        
+                        // Set response headers for PDF download
+                        const safeEventName = registration.evento.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                        const filename = `riepilogo-iscrizione-${safeEventName}-${registrationId}.pdf`;
+                        
+                        res.setHeader('Content-Type', 'application/pdf');
+                        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                        res.setHeader('Content-Length', pdfBuffer.length);
+                        
+                        res.send(pdfBuffer);
+                        
+                        log('INFO', `PDF generated successfully for registration ${registrationId}`);
+                        
+                    } catch (pdfError) {
+                        log('ERROR', `Error generating PDF for registration ${registrationId}: ${pdfError.message}`);
+                        res.status(500).json({ error: 'PDF generation failed' });
+                    }
+                });
+            });
+            
+        } catch (error) {
+            log('ERROR', `Error in PDF generation endpoint: ${error.message}`);
+            res.status(500).json({ error: 'Internal server error' });
         }
     });
 
