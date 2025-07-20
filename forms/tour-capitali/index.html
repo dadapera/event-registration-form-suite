@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tour delle Capitali Europee - Modulo Iscrizione</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css"/>
+  <style>
+    .iti { display: block; } /* Make the library's container a block element */
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+  <div class="max-w-4xl mx-auto p-6 bg-white shadow-md mt-10 rounded-lg">
+    <!-- Logos Section -->
+    <div class="flex justify-center items-center space-x-8 mb-6">
+      <img src="assets/msc-logo.jpg" alt="MSC Logo" class="h-16 w-auto object-contain">
+      <img src="assets/mae-logo.png" alt="Mae Logo" class="h-16 w-auto object-contain">
+      <img src="assets/lafenice-logo.jpg" alt="La Fenice Logo" class="h-16 w-auto object-contain">
+    </div>
+    
+    <h1 class="text-3xl font-bold text-center mb-4">TOUR DELLE CAPITALI EUROPEE</h1>
+    <p class="text-center mb-6">domenica 20 Aprile - domenica 4 Maggio 2025</p>
+    
+    <form id="registrationForm" class="space-y-6">
+      <section>
+        <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Capogruppo</h2>
+        <p class="text-sm text-red-600 mb-2">I campi contrassegnati con * sono obbligatori</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Nome *</label>
+            <input type="text" name="nome" id="nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateFiscalCode()">
+            <div id="nome_validation" class="text-xs mt-1 hidden"></div>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Cognome *</label>
+            <input type="text" name="cognome" id="cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateFiscalCode()">
+            <div id="cognome_validation" class="text-xs mt-1 hidden"></div>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label>
+            <input type="date" name="data_nascita" id="data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="calculateTotal(); validateFiscalCode()">
+            <div id="birth_date_validation" class="text-xs mt-1 hidden"></div>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label>
+            <input type="text" name="codice_fiscale" id="codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" title="Formato: RSSMRA80A01H501X" oninput="this.value = this.value.toUpperCase(); validateFiscalCode()" maxlength="16">
+            <div id="fiscal_code_validation" class="text-xs mt-1 hidden"></div>
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Email *</label>
+            <input type="email" name="email" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div class="w-full">
+            <label class="block mb-0.5 font-medium text-sm">Cellulare *</label>
+            <input type="tel" name="cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{10}" maxlength="10" title="Inserire un numero di 10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+
+          <!-- New Separated Address Fields for Capogruppo -->
+          <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo di Residenza *</div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+            <input type="text" name="via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <!-- Combined CAP, Città, Provincia for Capogruppo -->
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">CAP *</label>
+              <input type="text" name="cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Città *</label>
+              <input type="text" name="citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required>
+          </div>
+          <div>
+              <label class="block mb-0.5 font-medium text-sm">Provincia (sigla) *</label>
+              <select name="provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></select>
+            </div>
+          </div>
+          <!-- End of New Address Fields -->
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold mb-4">Dettagli Viaggio</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block mb-1 font-medium">Città di Partenza *</label>
+            <select name="partenza" id="partenza" class="w-full border border-gray-300 p-2 rounded" required onchange="calculateTotal()">
+              <option value="">--- Seleziona città ---</option>
+              <option value="autonomo">Raggiungimento autonomo</option>
+              <option value="milano">Milano - Stazione Centrale</option>
+              <option value="torino">Torino - Piazza Carlo Felice</option>
+              <option value="venezia">Venezia - Piazzale Roma</option>
+              <option value="firenze">Firenze - Stazione Santa Maria Novella</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold mb-4">Gestione Ospiti</h2>
+        <hr class="my-4 border-gray-300">
+      </section>
+
+      <!-- Dynamic Companions Section for Room 1 -->
+      <section id="companionsSectionRoom1" class="mt-2">
+        <h3 class="text-lg font-semibold mb-3 sr-only">Dati Ospite - Camera 1</h3> 
+        <div id="companionFieldsRoom1"></div>
+        <div class="mt-4">
+            <button type="button" id="addCompanionRoom1Button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm w-full md:w-auto">
+              Aggiungi Ospite (Camera 1)
+            </button>
+            <span id="room1MaxReachedText" class="text-sm text-red-500 hidden">Numero massimo di ospiti per questa camera raggiunto</span>
+        </div>
+      </section>
+
+      <hr class="my-6 border-gray-300"> 
+
+      <!-- Button to Add Room 2 -->
+      <section class="mt-6">
+        <button type="button" id="addRoom2Button" class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded">
+          Aggiungi camera
+        </button>
+      </section>
+
+      <!-- Room 2 Section (Initially Hidden) -->
+      <section id="room2Section" class="hidden mt-6 pt-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Dati Camera 2</h2>
+            <button type="button" id="removeRoom2Button" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1 rounded text-sm">Rimuovi Camera 2</button>
+        </div>
+        <div id="room2GuestFields" class="mt-4"></div>
+        <div class="mt-4">
+            <button type="button" id="addGuestRoom2Button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm w-full md:w-auto">
+              Aggiungi Occupante (Camera 2)
+            </button>
+            <span id="room2MaxReachedText" class="text-sm text-red-500 hidden">Numero massimo di ospiti per questa camera raggiunto</span>
+        </div>
+      </section>
+
+      <hr class="my-6 border-gray-300">
+
+      <!-- Company Billing Section -->
+      <section class="bg-yellow-50 p-3 rounded-lg">
+        <h2 class="text-xl font-semibold mb-3">Fatturazione</h2>
+        <div class="mb-3">
+          <label class="inline-flex items-center">
+            <input type="checkbox" id="fatturazioneAziendale" name="fatturazione_aziendale" class="form-checkbox mr-2" onchange="toggleCompanyBilling()">
+            <span class="font-medium text-sm">Voglio la fatturazione aziendale</span>
+          </label>
+          </div>
+          
+        <div id="companyBillingFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Ragione Sociale *</label>
+            <input type="text" name="ragione_sociale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Partita IVA *</label>
+            <input type="text" name="partita_iva" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{11}" title="Inserire 11 cifre" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice Fiscale Azienda</label>
+            <input type="text" name="codice_fiscale_azienda" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" oninput="this.value = this.value.toUpperCase()" maxlength="16">
+          </div>
+
+          <!-- New Separated Address Fields for Company Billing -->
+          <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo Sede Legale *</div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+            <input type="text" name="sede_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+          <!-- Combined CAP, Città, Provincia for Company Billing -->
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">CAP *</label>
+              <input type="text" name="sede_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Città *</label>
+              <input type="text" name="sede_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+            </div>
+            <div>
+              <label class="block mb-0.5 font-medium text-sm">Provincia (sigla) *</label>
+              <select name="sede_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm"></select>
+            </div>
+          </div>
+          <!-- End of New Address Fields -->
+
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice SDI (se disponibile)</label>
+            <input type="text" name="codice_sdi" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" maxlength="7">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">PEC (se disponibile)</label>
+            <input type="email" name="pec_azienda" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-blue-50 p-4 rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Riepilogo Costi</h2>
+        <div class="space-y-3">
+          <div class="bg-white p-3 rounded">
+            <button type="button" id="togglePricingRulesButton" class="text-sm text-gray-600 mb-2 font-semibold hover:text-blue-600 focus:outline-none">
+              Mostra Regole di Pricing <span id="pricingRulesArrow">&#9662;</span>
+            </button>
+            <ul id="pricingRulesList" class="text-xs text-gray-500 space-y-1 hidden"></ul>
+          </div>
+          <div>
+            <p><strong>Dettaglio Costi per Persona:</strong></p>
+            <div id="costoBase" class="text-sm bg-gray-50 p-2 rounded mt-1">€0</div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+            <p><strong>Numero Totale Persone:</strong> <span id="totalPersone">1</span></p>
+                <p><strong>Aeroporto:</strong> <span id="airport">-</span></p>
+                <p><strong>Camere:</strong> <span id="roomCountsDisplay">-</span></p>
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-blue-600">
+                <strong>COSTO TOTALE: <span id="prezzoTotale">€0</span></strong>
+            </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="pt-6">
+        <label class="inline-flex items-center mb-2">
+          <input type="checkbox" required class="form-checkbox mr-2">
+          Dichiaro di aver letto e compreso l'informativa ai sensi dell'Art. 13 del Reg. UE 679/2016 *
+        </label>
+        <br />
+        <label class="inline-flex items-center">
+          <input type="checkbox" required class="form-checkbox mr-2">
+          Confermo la veridicità e la correttezza dei dati inseriti *
+        </label>
+      </div>
+
+      <div class="pt-4">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">
+          Invia Iscrizione
+        </button>
+      </div>
+    </form>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer" class="mt-4 hidden">
+      <div id="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded hidden">
+        Iscrizione completata con successo!
+      </div>
+      <div id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded hidden">
+        Errore durante l'iscrizione. Riprova.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Global State & Configuration ---
+    let lastSubmissionId = null;
+    let lastEventName = '';
+    let companionRoom1Count = 0;
+    const MAX_COMPANIONS_ROOM1 = 3;
+    let guestRoom2Count = 0;
+    const MAX_GUESTS_ROOM2 = 4;
+    let calculationDate = new Date(); // Default, will be updated by config
+    let allGuestsWithCostsForPayload = [];
+    let calculatedRoomCounts = { camera_singola: 0, camera_doppia: 0, camera_tripla: 0, camera_quadrupla: 0 };
+    let phoneInput;
+    let instanceName;
+    
+    const prices = {
+        adulto: {
+            camera_doppia: { solo_land: 930, volo_bgy: 1351, volo_mxp: 1357 },
+            camera_singola: { solo_land: 1180, volo_bgy: 1601, volo_mxp: 1607 }
+        },
+        neonato: 190, 
+        bambino_2_12: { 
+            terzo_letto: { solo_land: 340, volo_bgy: 761, volo_mxp: 767 },
+            quarto_letto: { solo_land: 540, volo_bgy: 961, volo_mxp: 967 }
+        },
+        adulto_terzo_quarto_letto: { 
+            solo_land: 740, volo_bgy: 1161, volo_mxp: 1167
+        }
+    };
+    const provinceMap = [
+      { name: "Agrigento", abbr: "AG" }, { name: "Alessandria", abbr: "AL" }, { name: "Ancona", abbr: "AN" }, { name: "Aosta", abbr: "AO" }, { name: "Arezzo", abbr: "AR" }, { name: "Ascoli Piceno", abbr: "AP" }, { name: "Asti", abbr: "AT" }, { name: "Avellino", abbr: "AV" }, { name: "Bari", abbr: "BA" }, { name: "Barletta-Andria-Trani", abbr: "BT" }, { name: "Belluno", abbr: "BL" }, { name: "Benevento", abbr: "BN" }, { name: "Bergamo", abbr: "BG" }, { name: "Biella", abbr: "BI" }, { name: "Bologna", abbr: "BO" }, { name: "Bolzano", abbr: "BZ" }, { name: "Brescia", abbr: "BS" }, { name: "Brindisi", abbr: "BR" }, { name: "Cagliari", abbr: "CA" }, { name: "Caltanissetta", abbr: "CL" }, { name: "Campobasso", abbr: "CB" }, { name: "Caserta", abbr: "CE" }, { name: "Catania", abbr: "CT" }, { name: "Catanzaro", abbr: "CZ" }, { name: "Chieti", abbr: "CH" }, { name: "Como", abbr: "CO" }, { name: "Cosenza", abbr: "CS" }, { name: "Cremona", abbr: "CR" }, { name: "Crotone", abbr: "KR" }, { name: "Cuneo", abbr: "CN" }, { name: "Enna", abbr: "EN" }, { name: "Fermo", abbr: "FM" }, { name: "Ferrara", abbr: "FE" }, { name: "Firenze", abbr: "FI" }, { name: "Foggia", abbr: "FG" }, { name: "Forlì-Cesena", abbr: "FC" }, { name: "Frosinone", abbr: "FR" }, { name: "Genova", abbr: "GE" }, { name: "Gorizia", abbr: "GO" }, { name: "Grosseto", abbr: "GR" }, { name: "Imperia", abbr: "IM" }, { name: "Isernia", abbr: "IS" }, { name: "L'Aquila", abbr: "AQ" }, { name: "La Spezia", abbr: "SP" }, { name: "Latina", abbr: "LT" }, { name: "Lecce", abbr: "LE" }, { name: "Lecco", abbr: "LC" }, { name: "Livorno", abbr: "LI" }, { name: "Lodi", abbr: "LO" }, { name: "Lucca", abbr: "LU" }, { name: "Macerata", abbr: "MC" }, { name: "Mantova", abbr: "MN" }, { name: "Massa-Carrara", abbr: "MS" }, { name: "Matera", abbr: "MT" }, { name: "Messina", abbr: "ME" }, { name: "Milano", abbr: "MI" }, { name: "Modena", abbr: "MO" }, { name: "Monza e Brianza", abbr: "MB" }, { name: "Napoli", abbr: "NA" }, { name: "Novara", abbr: "NO" }, { name: "Nuoro", abbr: "NU" }, { name: "Oristano", abbr: "OR" }, { name: "Padova", abbr: "PD" }, { name: "Palermo", abbr: "PA" }, { name: "Parma", abbr: "PR" }, { name: "Pavia", abbr: "PV" }, { name: "Perugia", abbr: "PG" }, { name: "Pesaro e Urbino", abbr: "PU" }, { name: "Pescara", abbr: "PE" }, { name: "Piacenza", abbr: "PC" }, { name: "Pisa", abbr: "PI" }, { name: "Pistoia", abbr: "PT" }, { name: "Pordenone", abbr: "PN" }, { name: "Potenza", abbr: "PZ" }, { name: "Prato", abbr: "PO" }, { name: "Ragusa", abbr: "RG" }, { name: "Ravenna", abbr: "RA" }, { name: "Reggio Calabria", abbr: "RC" }, { name: "Reggio Emilia", abbr: "RE" }, { name: "Rieti", abbr: "RI" }, { name: "Rimini", abbr: "RN" }, { name: "Roma", abbr: "RM" }, { name: "Rovigo", abbr: "RO" }, { name: "Salerno", abbr: "SA" }, { name: "Sassari", abbr: "SS" }, { name: "Savona", abbr: "SV" }, { name: "Siena", abbr: "SI" }, { name: "Siracusa", abbr: "SR" }, { name: "Sondrio", abbr: "SO" }, { name: "Sud Sardegna", abbr: "SU" }, { name: "Taranto", abbr: "TA" }, { name: "Teramo", abbr: "TE" }, { name: "Terni", abbr: "TR" }, { name: "Torino", abbr: "TO" }, { name: "Trapani", abbr: "TP" }, { name: "Trento", abbr: "TN" }, { name: "Treviso", abbr: "TV" }, { name: "Trieste", abbr: "TS" }, { name: "Udine", abbr: "UD" }, { name: "Varese", abbr: "VA" }, { name: "Venezia", abbr: "VE" }, { name: "Verbano-Cusio-Ossola", abbr: "VB" }, { name: "Vercelli", abbr: "VC" }, { name: "Verona", abbr: "VR" }, { name: "Vibo Valentia", abbr: "VV" }, { name: "Vicenza", abbr: "VI" }, { name: "Viterbo", abbr: "VT" }
+    ].sort((a, b) => a.name.localeCompare(b.name));
+
+    // --- Main Setup on DOMContentLoaded ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      instanceName = window.location.pathname.split('/')[1];
+
+      const phoneInputField = document.querySelector("input[name='cellulare']");
+      phoneInput = window.intlTelInput(phoneInputField, {
+          initialCountry: "it",
+          separateDialCode: true,
+          utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js",
+      });
+
+      try {
+          const response = await fetch(`/${instanceName}/api/config`);
+          if (response.ok) {
+              const config = await response.json();
+              if (config.calculationDate) calculationDate = new Date(config.calculationDate);
+          } else console.error('Failed to fetch config, using default date.');
+      } catch (error) {
+          console.error('Error fetching config:', error);
+      }
+      
+      document.querySelectorAll('select[name="provincia"], select[name="sede_provincia"]').forEach(populateProvinceDropdown);
+      toggleCompanyBilling();
+      updatePricingRulesDisplay();
+      calculateTotal();
+
+      document.getElementById('registrationForm').addEventListener('submit', handleFormSubmission);
+      document.getElementById('registrationForm').addEventListener('change', handleFormChange);
+      document.getElementById('registrationForm').addEventListener('click', handleFormClick);
+      document.getElementById('addCompanionRoom1Button').addEventListener('click', addCompanionRoom1);
+      document.getElementById('addGuestRoom2Button').addEventListener('click', addGuestRoom2);
+      document.getElementById('addRoom2Button').addEventListener('click', showRoom2);
+      document.getElementById('removeRoom2Button').addEventListener('click', hideRoom2);
+      const togglePricingRulesButton = document.getElementById('togglePricingRulesButton');
+      if (togglePricingRulesButton) togglePricingRulesButton.addEventListener('click', togglePricingRules);
+      
+      document.getElementById('closeModalButton').addEventListener('click', () => {
+        document.getElementById('successModal').classList.add('hidden');
+      });
+
+      document.getElementById('downloadPdfButton').addEventListener('click', downloadSummaryPDF);
+    });
+    
+    async function downloadSummaryPDF() {
+        const { jsPDF } = window.jspdf;
+        const summaryElement = document.getElementById('modalSummary');
+        
+        summaryElement.style.backgroundColor = '#ffffff';
+        summaryElement.style.padding = '20px';
+
+        const canvas = await html2canvas(summaryElement, { 
+          scale: 2,
+          useCORS: true 
+        });
+
+        summaryElement.style.backgroundColor = '';
+        summaryElement.style.padding = '';
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        const safeEventName = lastEventName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+        pdf.save(`riepilogo-iscrizione-${safeEventName}.pdf`);
+    }
+
+    // --- Event Handlers ---
+    async function handleFormSubmission(e) {
+        e.preventDefault();
+        calculateTotal();
+
+        // Validate all fiscal codes before submission
+        const validation = validateAllFiscalCodes();
+        if (validation.hasErrors) {
+            const mc = document.getElementById('messageContainer');
+            const em = document.getElementById('errorMessage');
+            mc.classList.remove('hidden');
+            em.innerHTML = `<strong>Errori di validazione:</strong><br>• ${validation.errorMessages.join('<br>• ')}`;
+            em.classList.remove('hidden');
+            document.getElementById('successMessage').classList.add('hidden');
+            
+            // Scroll to the error message
+            mc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        const ospiti = allGuestsWithCostsForPayload.map(guestInfo => {
+            const prefix = `${guestInfo.type}_${guestInfo.form_index}`;
+            let indirizzoOspite = '';
+            if (document.getElementById(`${prefix}_use_capogruppo_address`)?.checked) {
+                indirizzoOspite = `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`;
+            } else {
+                const via = formData.get(`${prefix}_via_e_numero_civico`) || '';
+                const cap = formData.get(`${prefix}_cap`) || '';
+                const citta = formData.get(`${prefix}_citta`) || '';
+                const provincia = formData.get(`${prefix}_provincia`) || '';
+                if (via && cap && citta && provincia) indirizzoOspite = `${via}, ${cap} ${citta}, ${provincia}`;
+            }
+            return {
+                nome: formData.get(`${prefix}_nome`), cognome: formData.get(`${prefix}_cognome`),
+                data_nascita: formData.get(`${prefix}_data_nascita`), codice_fiscale: formData.get(`${prefix}_codice_fiscale`),
+                indirizzo: indirizzoOspite
+            };
+        });
+
+        const payload = {
+            nome: data.nome, cognome: data.cognome, email: data.email, cellulare: phoneInput.getNumber(),
+            data_nascita: data.data_nascita, indirizzo: `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`,
+            codice_fiscale: data.codice_fiscale, partenza: data.partenza, evento: 'Crociera sui Fiordi 2025',
+            ...calculatedRoomCounts,
+            costo_totale_gruppo: parseFloat(document.getElementById('prezzoTotale').textContent.replace('€', '')),
+            ospiti: ospiti,
+            fatturazione_aziendale: document.getElementById('fatturazioneAziendale').checked,
+            dati_fatturazione: document.getElementById('fatturazioneAziendale').checked ? {
+                ragione_sociale: data.ragione_sociale, partita_iva: data.partita_iva, codice_fiscale_azienda: data.codice_fiscale_azienda,
+                indirizzo_sede_legale: data.sede_via_e_numero_civico ? `${data.sede_via_e_numero_civico}, ${data.sede_cap} ${data.sede_citta}, ${data.sede_provincia}` : '',
+                codice_sdi: data.codice_sdi, pec_azienda: data.pec_azienda
+            } : null
+        };
+        
+        const mc = document.getElementById('messageContainer'), sm = document.getElementById('successMessage'), em = document.getElementById('errorMessage');
+        try {
+            const response = await fetch(`/${instanceName}/api/registrati`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                // NEW: Show modal on success
+                lastSubmissionId = result.id;
+                lastEventName = payload.evento;
+                const modalSummary = document.getElementById('modalSummary');
+                const partenzaSelect = document.getElementById('partenza');
+                const partenzaText = partenzaSelect.options[partenzaSelect.selectedIndex].text;
+                const summaryHtml = `
+                    <h4 class="font-semibold text-lg text-center">Riepilogo Iscrizione (ID: ${result.id})</h4>
+                    
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dettagli Evento</h5>
+                        <p><strong>Evento:</strong> ${payload.evento}</p>
+                        <p><strong>Aeroporto di Partenza:</strong> ${partenzaText}</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dati Capogruppo</h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                            <p><strong>Nome:</strong> ${payload.nome}</p>
+                            <p><strong>Cognome:</strong> ${payload.cognome}</p>
+                            <p><strong>Data di Nascita:</strong> ${new Date(payload.data_nascita).toLocaleDateString('it-IT')}</p>
+                            <p><strong>Codice Fiscale:</strong> ${payload.codice_fiscale}</p>
+                            <p><strong>Email:</strong> ${payload.email}</p>
+                            <p><strong>Cellulare:</strong> ${payload.cellulare}</p>
+                        </div>
+                        <p class="mt-2"><strong>Indirizzo:</strong> ${payload.indirizzo}</p>
+                    </div>
+
+                    ${payload.ospiti && payload.ospiti.length > 0 ? `
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Accompagnatori</h5>
+                        ${payload.ospiti.map((o, index) => `
+                            <div class="mt-2 p-2 border rounded-md">
+                                <p class="font-semibold">Ospite ${index + 1}</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                                    <p><strong>Nome:</strong> ${o.nome}</p>
+                                    <p><strong>Cognome:</strong> ${o.cognome}</p>
+                                    <p><strong>Data di Nascita:</strong> ${o.data_nascita ? new Date(o.data_nascita).toLocaleDateString('it-IT') : 'N/D'}</p>
+                                    <p><strong>Codice Fiscale:</strong> ${o.codice_fiscale || 'N/D'}</p>
+                                </div>
+                                <p class="mt-2"><strong>Indirizzo:</strong> ${o.indirizzo || 'Non specificato'}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+
+                    ${payload.fatturazione_aziendale ? `
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dati Fatturazione Aziendale</h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                            <p class="col-span-2"><strong>Ragione Sociale:</strong> ${payload.dati_fatturazione.ragione_sociale}</p>
+                            <p><strong>Partita IVA:</strong> ${payload.dati_fatturazione.partita_iva}</p>
+                            <p><strong>Codice Fiscale Azienda:</strong> ${payload.dati_fatturazione.codice_fiscale_azienda || 'N/D'}</p>
+                            <p><strong>Codice SDI:</strong> ${payload.dati_fatturazione.codice_sdi || 'N/D'}</p>
+                            <p><strong>PEC:</strong> ${payload.dati_fatturazione.pec_azienda || 'N/D'}</p>
+                        </div>
+                        <p class="mt-2"><strong>Sede Legale:</strong> ${payload.dati_fatturazione.indirizzo_sede_legale}</p>
+                    </div>
+                    ` : ''}
+
+                    <div class="mt-4">
+                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Riepilogo Camere e Costi</h5>
+                        <p><strong>Composizione Camere:</strong> ${Object.entries(payload).filter(([key, value]) => key.startsWith('camera_') && value > 0).map(([key, value]) => `${value} ${key.replace(/_/g, ' ')}`).join(', ') || 'N/D'}</p>
+                        <p class="text-lg font-bold mt-2"><strong>Costo Totale:</strong> €${payload.costo_totale_gruppo.toFixed(2)}</p>
+                    </div>
+                `;
+                modalSummary.innerHTML = summaryHtml;
+                document.getElementById('successModal').classList.remove('hidden');
+
+                // NEW: Add email to success message
+                const email = payload.email;
+                document.getElementById('success-mail-message').innerHTML = `Riceverai a breve una mail di riepilogo all'indirizzo <strong>${email}</strong>. Controlla anche la cartella spam.`;
+
+                // Hide old message style
+                mc.classList.add('hidden');
+                sm.classList.add('hidden');
+                em.classList.add('hidden');
+                
+                e.target.reset();
+                resetFullUI();
+            } else { 
+                mc.classList.remove('hidden');
+                em.textContent = result.error || 'Errore durante l\'iscrizione.';
+                em.classList.remove('hidden');
+                sm.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            em.textContent = 'Errore di connessione. Riprova.';
+            em.classList.remove('hidden');
+            sm.classList.add('hidden');
+            mc.classList.remove('hidden');
+        }
+    }
+
+    function handleFormChange(e) {
+      if (e.target.matches('input[name*="data_nascita"], select[name="partenza"]')) calculateTotal();
+      if (e.target.matches('#fatturazioneAziendale')) toggleCompanyBilling();
+      if (e.target.matches('.use-capogruppo-address-checkbox')) handleAddressCheckbox(e.target);
+    }
+    
+    function handleFormClick(e) {
+        if (e.target.matches('.remove-guest-button')) {
+            const roomType = e.target.dataset.removeRoom;
+            e.target.closest('.guest-block').remove();
+            if (roomType === 'room1') {
+                companionRoom1Count = document.getElementById('companionFieldsRoom1').children.length;
+                document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
+                document.getElementById('room1MaxReachedText').classList.toggle('hidden', companionRoom1Count < MAX_COMPANIONS_ROOM1);
+            } else if (roomType === 'room2') {
+                guestRoom2Count = document.getElementById('room2GuestFields').children.length;
+                document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
+                document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
+            }
+            calculateTotal();
+        }
+    }
+
+    // --- UI Update Functions ---
+    function resetFullUI() {
+        document.getElementById('companionFieldsRoom1').innerHTML = '';
+        companionRoom1Count = 0;
+        document.getElementById('addCompanionRoom1Button').classList.remove('hidden');
+        document.getElementById('room1MaxReachedText').classList.add('hidden');
+        hideRoom2();
+        calculateTotal();
+    }
+
+    function showRoom2() {
+        document.getElementById('room2Section').classList.remove('hidden');
+        document.getElementById('addRoom2Button').classList.add('hidden');
+        if (guestRoom2Count === 0) addGuestRoom2();
+    }
+
+    function hideRoom2() {
+        document.getElementById('room2Section').classList.add('hidden');
+        document.getElementById('addRoom2Button').classList.remove('hidden');
+        document.getElementById('room2GuestFields').innerHTML = '';
+        guestRoom2Count = 0;
+        document.getElementById('addGuestRoom2Button').classList.remove('hidden');
+        document.getElementById('room2MaxReachedText').classList.add('hidden');
+    }
+
+    function addCompanionRoom1() {
+      if (companionRoom1Count < MAX_COMPANIONS_ROOM1) {
+        companionRoom1Count++;
+            const newBlock = createGuestBlockHTML('room1', companionRoom1Count);
+            document.getElementById('companionFieldsRoom1').insertAdjacentHTML('beforeend', newBlock);
+            populateProvinceDropdown(document.querySelector(`[name="ospite_room1_${companionRoom1Count}_provincia"]`));
+        calculateTotal();
+            document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
+            document.getElementById('room1MaxReachedText').classList.toggle('hidden', companionRoom1Count < MAX_COMPANIONS_ROOM1);
+      }
+    }
+
+    function addGuestRoom2() {
+      if (guestRoom2Count < MAX_GUESTS_ROOM2) {
+        guestRoom2Count++;
+            const newBlock = createGuestBlockHTML('room2', guestRoom2Count);
+            document.getElementById('room2GuestFields').insertAdjacentHTML('beforeend', newBlock);
+            populateProvinceDropdown(document.querySelector(`[name="ospite_room2_${guestRoom2Count}_provincia"]`));
+        calculateTotal();
+            document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
+            document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
+        }
+    }
+
+    function handleAddressCheckbox(checkbox) {
+        const prefix = checkbox.dataset.prefix;
+        const addressWrapper = document.getElementById(`${prefix}_address_wrapper`);
+        const isChecked = checkbox.checked;
+        if (!addressWrapper) return;
+        addressWrapper.querySelectorAll('input, select').forEach(input => {
+            input.required = !isChecked;
+            if (isChecked) {
+                const capogruppoFieldName = input.name.replace(prefix + '_', '');
+                const capogruppoField = document.querySelector(`[name="${capogruppoFieldName}"]`);
+                if(capogruppoField) input.value = capogruppoField.value;
+            } else {
+                input.tagName !== 'SELECT' ? (input.value = '') : (input.selectedIndex = 0);
+            }
+        });
+        addressWrapper.classList.toggle('hidden', isChecked);
+        if (!isChecked) addressWrapper.querySelector('input, select').focus();
+    }
+    
+    function toggleCompanyBilling() {
+        const isChecked = document.getElementById('fatturazioneAziendale').checked;
+      const fields = document.getElementById('companyBillingFields');
+      fields.classList.toggle('hidden', !isChecked);
+        fields.querySelectorAll('input, select').forEach(input => {
+        input.disabled = !isChecked;
+            if (['ragione_sociale', 'partita_iva', 'sede_via_e_numero_civico', 'sede_cap', 'sede_citta', 'sede_provincia'].includes(input.name)) {
+          input.required = isChecked;
+        }
+        if (!isChecked) {
+              input.tagName !== 'SELECT' ? input.value = '' : input.selectedIndex = 0;
+        }
+      });
+    }
+
+    function togglePricingRules() {
+        const pricingRulesList = document.getElementById('pricingRulesList');
+        const pricingRulesArrow = document.getElementById('pricingRulesArrow');
+        const isHidden = pricingRulesList.classList.toggle('hidden');
+        this.childNodes[0].nodeValue = isHidden ? "Mostra Regole di Pricing " : "Nascondi Regole di Pricing ";
+        pricingRulesArrow.innerHTML = isHidden ? '&#9662;' : '&#9652;';
+    }
+
+    // --- Calculation & HTML Generation ---
+    function createGuestBlockHTML(roomType, index) {
+        const prefix = `${roomType === 'room1' ? 'ospite_room1' : 'ospite_room2'}_${index}`;
+        const title = roomType === 'room1' ? `Ospite ${index} (Camera 1)` : `Ospite ${index} (Camera 2)`;
+        return `<div class="guest-block bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200" data-remove-room="${roomType}"><div class="flex justify-between items-center mb-2"><h3 class="font-semibold text-base">${title}</h3><button type="button" class="remove-guest-button text-red-500 hover:text-red-700 font-semibold text-xs">Rimuovi</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2"><div><label class="block mb-0.5 font-medium text-sm">Nome *</label><input type="text" name="${prefix}_nome" id="${prefix}_nome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_nome_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Cognome *</label><input type="text" name="${prefix}_cognome" id="${prefix}_cognome" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required oninput="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_cognome_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Data di Nascita *</label><input type="date" name="${prefix}_data_nascita" id="${prefix}_data_nascita" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required onchange="validateGuestFiscalCode('${prefix}')"><div id="${prefix}_birth_date_validation" class="text-xs mt-1 hidden"></div></div><div><label class="block mb-0.5 font-medium text-sm">Codice Fiscale *</label><input type="text" name="${prefix}_codice_fiscale" id="${prefix}_codice_fiscale" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]" oninput="this.value = this.value.toUpperCase(); validateGuestFiscalCode('${prefix}')" maxlength="16"><div id="${prefix}_fiscal_code_validation" class="text-xs mt-1 hidden"></div></div><div class="md:col-span-2 my-2"><label class="inline-flex items-center"><input type="checkbox" id="${prefix}_use_capogruppo_address" data-prefix="${prefix}" class="form-checkbox mr-2 use-capogruppo-address-checkbox"><span class="text-sm font-medium">Usa indirizzo del Capogruppo</span></label></div><div id="${prefix}_address_wrapper" class="contents"><div class="md:col-span-2 font-medium text-sm mb-0.5 mt-1">Indirizzo di Residenza *</div><div class="md:col-span-2"><label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label><input type="text" name="${prefix}_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div class="md-col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4"><div><label class="block mb-0.5 font-medium text-sm">CAP *</label><input type="text" name="${prefix}_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{5}" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');"></div><div><label class="block mb-0.5 font-medium text-sm">Città *</label><input type="text" name="${prefix}_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></div><div><label class="block mb-0.5 font-medium text-sm">Provincia *</label><select name="${prefix}_provincia" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required></select></div></div></div></div></div>`;
+    }
+
+    function calculateAge(birthDate) {
+        if (!birthDate || isNaN(new Date(birthDate))) return 0;
+      const birth = new Date(birthDate);
+      let age = calculationDate.getFullYear() - birth.getFullYear();
+        const m = calculationDate.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && calculationDate.getDate() < birth.getDate())) age--;
+      return age;
+    }
+
+    function populateProvinceDropdown(selectElement) {
+      if (!selectElement) return;
+        selectElement.innerHTML = '';
+      selectElement.add(new Option("--- Seleziona ---", ""));
+        provinceMap.forEach(p => selectElement.add(new Option(p.name, p.abbr)));
+    }
+    
+    function calculateTotal() {
+        allGuestsWithCostsForPayload = [];
+      calculatedRoomCounts = { camera_singola: 0, camera_doppia: 0, camera_tripla: 0, camera_quadrupla: 0 };
+        const partenzaSelect = document.getElementById('partenza');
+        const costBreakdownEl = document.getElementById('costoBase');
+      
+        if (!partenzaSelect.value) {
+            costBreakdownEl.innerHTML = '<span class="text-red-500 font-medium">Selezionare Aeroporto</span>';
+            return;
+        }
+        const packageTypeKey = { 'autonomo': 'solo_land', 'bgy': 'volo_bgy', 'mpx': 'volo_mxp' }[partenzaSelect.value];
+        
+        let totalCost = 0, totalPeople = 0, costBreakdownHTML = '';
+        
+        // --- Process Room 1 ---
+        const room1Occupants = [{ age: calculateAge(document.querySelector('[name="data_nascita"]').value), name: "Capogruppo", type: 'capogruppo', form_index: 0 }];
+        document.querySelectorAll('#companionFieldsRoom1 .guest-block').forEach((block, i) => {
+            room1Occupants.push({ age: calculateAge(block.querySelector('[name*="data_nascita"]').value), name: `Ospite ${i+1}`, type: 'ospite_room1', form_index: i+1 });
+        });
+        
+        if(room1Occupants.length > 0) {
+            totalPeople += room1Occupants.length;
+            costBreakdownHTML += `<p class='font-semibold mt-1 text-blue-700'>Camera 1:</p>`;
+            room1Occupants.forEach((occupant, i) => {
+                let cost = (i < 2) ? 0 : getOccupantCost(occupant.age, i - 1, packageTypeKey, room1Occupants.length - 2);
+                let label = (i < 2) ? "GRATUITO" : getOccupantLabel(occupant.age, i-1, packageTypeKey, room1Occupants.length - 2);
+                totalCost += cost;
+                costBreakdownHTML += `<div>${occupant.name} (Età: ${occupant.age}) - ${label}: €${cost.toFixed(2)}</div>`;
+                if(occupant.type !== 'capogruppo') allGuestsWithCostsForPayload.push(occupant);
+            });
+            calculatedRoomCounts[['camera_singola','camera_doppia','camera_tripla','camera_quadrupla'][room1Occupants.length - 1]]++;
+        }
+        
+        // --- Process Room 2 ---
+        if (!document.getElementById('room2Section').classList.contains('hidden')) {
+            const room2Occupants = [];
+            document.querySelectorAll('#room2GuestFields .guest-block').forEach((block, i) => {
+                room2Occupants.push({ age: calculateAge(block.querySelector('[name*="data_nascita"]').value), name: `Ospite ${i+1}`, type: 'ospite_room2', form_index: i+1 });
+            });
+            if (room2Occupants.length > 0) {
+                totalPeople += room2Occupants.length;
+                costBreakdownHTML += `<p class='font-semibold mt-2 text-blue-700'>Camera 2:</p>`;
+                const payingInRoom2 = room2Occupants.filter(o => o.age >= 2).length;
+                let payingCount = 0;
+                room2Occupants.forEach((occupant) => {
+                    let position = (occupant.age >= 2) ? ++payingCount : 0;
+                    const cost = getOccupantCost(occupant.age, position, packageTypeKey, payingInRoom2);
+                    const label = getOccupantLabel(occupant.age, position, packageTypeKey, payingInRoom2);
+                    totalCost += cost;
+                    costBreakdownHTML += `<div>${occupant.name} (Età: ${occupant.age}) - ${label}: €${cost.toFixed(2)}</div>`;
+                    allGuestsWithCostsForPayload.push(occupant);
+                });
+                if (room2Occupants.length > 0) calculatedRoomCounts[['camera_singola','camera_doppia','camera_tripla','camera_quadrupla'][room2Occupants.length - 1]]++;
+            }
+        }
+        
+        costBreakdownEl.innerHTML = costBreakdownHTML || 'Aggiungi partecipanti.';
+        document.getElementById('totalPersone').textContent = totalPeople;
+      document.getElementById('airport').textContent = partenzaSelect.selectedOptions[0].text;
+        document.getElementById('prezzoTotale').textContent = `€${totalCost.toFixed(2)}`;
+        document.getElementById('roomCountsDisplay').textContent = Object.entries(calculatedRoomCounts).filter(([,val]) => val > 0).map(([key, val]) => `${val} ${key.replace(/_/g, ' ')}`).join(', ') || 'Nessuna';
+    }
+
+    function getOccupantCost(age, positionInPayingGroup, packageTypeKey, totalPayingInRoom) {
+        if (age < 2) return prices.neonato;
+        if (positionInPayingGroup === 1) return prices.adulto[totalPayingInRoom === 1 ? 'camera_singola' : 'camera_doppia'][packageTypeKey];
+        if (positionInPayingGroup === 2) return prices.adulto.camera_doppia[packageTypeKey];
+        const bedType = positionInPayingGroup === 3 ? 'terzo_letto' : 'quarto_letto';
+        if (age < 12) return prices.bambino_2_12[bedType][packageTypeKey];
+        return prices.adulto_terzo_quarto_letto[packageTypeKey];
+    }
+    
+    function getOccupantLabel(age, positionInPayingGroup, packageTypeKey, totalPayingInRoom) {
+        if (age < 2) return "Neonato <2 anni";
+        if (positionInPayingGroup <= 0) return "Neonato"; // Should not happen for paying guests but as a fallback
+        if (positionInPayingGroup <= 2) return totalPayingInRoom === 1 ? "Adulto Camera Singola" : "Adulto Camera Doppia";
+        const bedType = positionInPayingGroup === 3 ? "3° letto" : "4° letto";
+        return age < 12 ? `Bambino 2-12 anni (${bedType})` : `Adulto >=12 anni (${bedType})`;
+    }
+    
+    function updatePricingRulesDisplay() {
+      const rulesList = document.querySelector('#pricingRulesList');
+      const formattedDate = calculationDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        rulesList.innerHTML = `<p class="font-semibold text-blue-600">Camera 1: Primi 2 occupanti (Capogruppo + 1 Ospite) GRATUITI!</p><li class="font-semibold mt-1">Adulto:</li><li>- Camera Singola (Solo Land): €${prices.adulto.camera_singola.solo_land.toFixed(2)}</li><li>- Camera Doppia (Solo Land): €${prices.adulto.camera_doppia.solo_land.toFixed(2)} /persona</li><li class="font-semibold mt-2">Bambino 0-2 anni:</li><li>- Quota fissa: €${prices.neonato.toFixed(2)}</li><li class="font-semibold mt-2">Bambino 2-12 anni (3°/4° letto):</li><li>- 3° letto (Solo Land): €${prices.bambino_2_12.terzo_letto.solo_land.toFixed(2)}</li><li>- 4° letto (Solo Land): €${prices.bambino_2_12.quarto_letto.solo_land.toFixed(2)}</li><li class="font-semibold mt-2">Adulto (3°/4° letto):</li><li>- 3°/4° letto (Solo Land): €${prices.adulto_terzo_quarto_letto.solo_land.toFixed(2)}</li><p class="text-xs mt-2 font-semibold">Nota: L'età viene calcolata alla data di partenza (${formattedDate}). I prezzi del volo verranno applicati in base alla selezione.</p>`;
+    }
+
+    // Fiscal Code Validation Functions
+    function extractConsonants(str) {
+        // Remove accents and normalize, then extract consonants
+        const normalized = str.toUpperCase()
+            .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+            .replace(/[ÈÉÊË]/g, 'E')
+            .replace(/[ÌÍÎÏ]/g, 'I')
+            .replace(/[ÒÓÔÕÖ]/g, 'O')
+            .replace(/[ÙÚÛÜ]/g, 'U')
+            .replace(/[^A-Z]/g, '');
+        return normalized.replace(/[AEIOU]/g, '');
+    }
+
+    function extractVowels(str) {
+        // Remove accents and normalize, then extract vowels
+        const normalized = str.toUpperCase()
+            .replace(/[ÀÁÂÃÄÅ]/g, 'A')
+            .replace(/[ÈÉÊË]/g, 'E')
+            .replace(/[ÌÍÎÏ]/g, 'I')
+            .replace(/[ÒÓÔÕÖ]/g, 'O')
+            .replace(/[ÙÚÛÜ]/g, 'U')
+            .replace(/[^A-Z]/g, '');
+        return normalized.replace(/[^AEIOU]/g, '');
+    }
+
+    function generateNameCode(name) {
+        const consonants = extractConsonants(name);
+        const vowels = extractVowels(name);
+        
+        // Special rule for names: if 4+ consonants, take 1st, 3rd, 4th
+        if (consonants.length >= 4) {
+            return consonants.charAt(0) + consonants.charAt(2) + consonants.charAt(3);
+        } else if (consonants.length >= 3) {
+            return consonants.substring(0, 3);
+        } else {
+            return (consonants + vowels + 'XXX').substring(0, 3);
+        }
+    }
+
+    function generateSurnameCode(surname) {
+        const consonants = extractConsonants(surname);
+        const vowels = extractVowels(surname);
+        
+        // For surnames: take first 3 consonants, then vowels if needed
+        if (consonants.length >= 3) {
+            return consonants.substring(0, 3);
+        } else {
+            return (consonants + vowels + 'XXX').substring(0, 3);
+        }
+    }
+
+    // Check digit validation tables and function
+    function calculateCheckDigit(fiscalCode15) {
+        // Odd position values (1st, 3rd, 5th, etc. - 0-indexed: 0, 2, 4, etc.)
+        const oddValues = {
+            '0': 1, '1': 0, '2': 5, '3': 7, '4': 9, '5': 13, '6': 15, '7': 17, '8': 19, '9': 21,
+            'A': 1, 'B': 0, 'C': 5, 'D': 7, 'E': 9, 'F': 13, 'G': 15, 'H': 17, 'I': 19, 'J': 21,
+            'K': 2, 'L': 4, 'M': 18, 'N': 20, 'O': 11, 'P': 3, 'Q': 6, 'R': 8, 'S': 12, 'T': 14,
+            'U': 16, 'V': 10, 'W': 22, 'X': 25, 'Y': 24, 'Z': 23
+        };
+
+        // Even position values (2nd, 4th, 6th, etc. - 0-indexed: 1, 3, 5, etc.)
+        const evenValues = {
+            '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+            'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9,
+            'K': 10, 'L': 11, 'M': 12, 'N': 13, 'O': 14, 'P': 15, 'Q': 16, 'R': 17, 'S': 18, 'T': 19,
+            'U': 20, 'V': 21, 'W': 22, 'X': 23, 'Y': 24, 'Z': 25
+        };
+
+        // Check digit table
+        const checkDigits = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+        let sum = 0;
+        for (let i = 0; i < 15; i++) {
+            const char = fiscalCode15.charAt(i);
+            if (i % 2 === 0) {
+                // Odd position (1-indexed)
+                sum += oddValues[char] || 0;
+            } else {
+                // Even position (1-indexed)
+                sum += evenValues[char] || 0;
+            }
+        }
+
+        return checkDigits[sum % 26];
+    }
+
+    function validateCheckDigit(fiscalCode) {
+        if (fiscalCode.length !== 16) return false;
+        const first15 = fiscalCode.substring(0, 15);
+        const checkDigit = fiscalCode.charAt(15);
+        const expectedCheckDigit = calculateCheckDigit(first15);
+        return checkDigit === expectedCheckDigit;
+    }
+
+    function decodeBirthDateFromFiscalCode(fiscalCode) {
+        if (fiscalCode.length < 11) return null;
+        
+        // Extract year, month, day from fiscal code
+        const yearStr = fiscalCode.substring(6, 8);
+        const monthChar = fiscalCode.substring(8, 9);
+        const dayStr = fiscalCode.substring(9, 11);
+        
+        // Month mapping
+        const monthMap = {
+            'A': '01', 'B': '02', 'C': '03', 'D': '04', 'E': '05', 'H': '06',
+            'L': '07', 'M': '08', 'P': '09', 'R': '10', 'S': '11', 'T': '12'
+        };
+        
+        const month = monthMap[monthChar];
+        if (!month) return null;
+        
+        // Day calculation (subtract 40 if >= 40, indicating female)
+        let day = parseInt(dayStr);
+        const isFemale = day > 40;
+        if (isFemale) day -= 40;
+        
+        // Year calculation (assume 1900s for years > 50, 2000s for years <= 50)
+        let year = parseInt(yearStr);
+        year += (year > 50) ? 1900 : 2000;
+        
+        return {
+            year: year,
+            month: month,
+            day: day.toString().padStart(2, '0'),
+            isFemale: isFemale,
+            dateString: `${year}-${month}-${day.toString().padStart(2, '0')}`
+        };
+    }
+
+    function validateFiscalCode() {
+        const nomeInput = document.getElementById('nome');
+        const cognomeInput = document.getElementById('cognome');
+        const codiceFiscaleInput = document.getElementById('codice_fiscale');
+        const birthDateInput = document.getElementById('data_nascita');
+
+        const nome = nomeInput.value.trim();
+        const cognome = cognomeInput.value.trim();
+        const codiceFiscale = codiceFiscaleInput.value.trim();
+        const birthDate = birthDateInput.value;
+
+        const nomeValidation = document.getElementById('nome_validation');
+        const cognomeValidation = document.getElementById('cognome_validation');
+        const fiscalCodeValidation = document.getElementById('fiscal_code_validation');
+        const birthDateValidation = document.getElementById('birth_date_validation');
+
+        // Clear previous validations
+        [nomeValidation, cognomeValidation, fiscalCodeValidation, birthDateValidation].forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500');
+        });
+
+        // If any required field is empty, don't perform cross-validation
+        if (!nome || !cognome || !codiceFiscale || !birthDate) {
+            return;
+        }
+
+                 // Check fiscal code format
+         if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Formato codice fiscale non valido';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Validate check digit
+         if (!validateCheckDigit(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Il carattere di controllo del codice fiscale non è corretto';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+        // Decode birth date from fiscal code
+        const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+        if (!decodedData) {
+            fiscalCodeValidation.textContent = 'Impossibile decodificare la data di nascita dal codice fiscale';
+            fiscalCodeValidation.classList.add('text-red-500');
+            fiscalCodeValidation.classList.remove('hidden');
+            return;
+        }
+
+        // Compare birth dates
+        if (decodedData.dateString !== birthDate) {
+            birthDateValidation.textContent = `La data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`;
+            birthDateValidation.classList.add('text-red-500');
+            birthDateValidation.classList.remove('hidden');
+            
+            fiscalCodeValidation.textContent = 'Data di nascita non corrispondente';
+            fiscalCodeValidation.classList.add('text-red-500');
+            fiscalCodeValidation.classList.remove('hidden');
+        } else {
+            birthDateValidation.textContent = '✓ Data di nascita verificata';
+            birthDateValidation.classList.add('text-green-500');
+            birthDateValidation.classList.remove('hidden');
+        }
+
+        // Validate name and surname codes
+        const expectedSurnameCode = generateSurnameCode(cognome);
+        const expectedNameCode = generateNameCode(nome);
+        const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+        const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+                 if (fiscalSurnameCode !== expectedSurnameCode) {
+             cognomeValidation.textContent = `Il cognome non corrisponde (inserito: ${expectedSurnameCode}, nel CF: ${fiscalSurnameCode})`;
+             cognomeValidation.classList.add('text-yellow-500');
+             cognomeValidation.classList.remove('hidden');
+         } else {
+             cognomeValidation.textContent = '✓ Cognome verificato';
+             cognomeValidation.classList.add('text-green-500');
+             cognomeValidation.classList.remove('hidden');
+         }
+
+         if (fiscalNameCode !== expectedNameCode) {
+             nomeValidation.textContent = `Il nome non corrisponde (inserito: ${expectedNameCode}, nel CF: ${fiscalNameCode})`;
+             nomeValidation.classList.add('text-yellow-500');
+             nomeValidation.classList.remove('hidden');
+         } else {
+             nomeValidation.textContent = '✓ Nome verificato';
+             nomeValidation.classList.add('text-green-500');
+             nomeValidation.classList.remove('hidden');
+         }
+
+        // Overall fiscal code validation message
+        const allMatches = (decodedData.dateString === birthDate) && 
+                          (fiscalSurnameCode === expectedSurnameCode) && 
+                          (fiscalNameCode === expectedNameCode);
+        
+                 if (allMatches) {
+             fiscalCodeValidation.textContent = '✓ Codice fiscale completamente verificato';
+             fiscalCodeValidation.classList.add('text-green-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else if (decodedData.dateString === birthDate) {
+             fiscalCodeValidation.textContent = '⚠ Data di nascita corretta, verifica nome e cognome';
+             fiscalCodeValidation.classList.add('text-yellow-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         }
+     }
+
+     function validateGuestFiscalCode(prefix) {
+         const nomeInput = document.getElementById(`${prefix}_nome`);
+         const cognomeInput = document.getElementById(`${prefix}_cognome`);
+         const codiceFiscaleInput = document.getElementById(`${prefix}_codice_fiscale`);
+         const birthDateInput = document.getElementById(`${prefix}_data_nascita`);
+
+         if (!nomeInput || !cognomeInput || !codiceFiscaleInput || !birthDateInput) return;
+
+         const nome = nomeInput.value.trim();
+         const cognome = cognomeInput.value.trim();
+         const codiceFiscale = codiceFiscaleInput.value.trim();
+         const birthDate = birthDateInput.value;
+
+         const nomeValidation = document.getElementById(`${prefix}_nome_validation`);
+         const cognomeValidation = document.getElementById(`${prefix}_cognome_validation`);
+         const fiscalCodeValidation = document.getElementById(`${prefix}_fiscal_code_validation`);
+         const birthDateValidation = document.getElementById(`${prefix}_birth_date_validation`);
+
+         if (!nomeValidation || !cognomeValidation || !fiscalCodeValidation || !birthDateValidation) return;
+
+         // Clear previous validations
+         [nomeValidation, cognomeValidation, fiscalCodeValidation, birthDateValidation].forEach(el => {
+             el.classList.add('hidden');
+             el.classList.remove('text-red-500', 'text-green-500', 'text-yellow-500');
+         });
+
+         // If any required field is empty, don't perform cross-validation
+         if (!nome || !cognome || !codiceFiscale || !birthDate) {
+             return;
+         }
+
+         // Check fiscal code format
+         if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Formato codice fiscale non valido (deve essere 16 caratteri: 6 lettere, 2 numeri, 1 lettera, 2 numeri, 1 lettera, 3 numeri, 1 lettera)';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Validate check digit
+         if (!validateCheckDigit(codiceFiscale)) {
+             fiscalCodeValidation.textContent = 'Il carattere di controllo del codice fiscale non è corretto';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Decode birth date from fiscal code
+         const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+         if (!decodedData) {
+             fiscalCodeValidation.textContent = 'Impossibile decodificare la data di nascita dal codice fiscale';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+             return;
+         }
+
+         // Compare birth dates
+         if (decodedData.dateString !== birthDate) {
+             birthDateValidation.textContent = `La data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`;
+             birthDateValidation.classList.add('text-red-500');
+             birthDateValidation.classList.remove('hidden');
+             
+             fiscalCodeValidation.textContent = 'Data di nascita non corrispondente';
+             fiscalCodeValidation.classList.add('text-red-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else {
+             birthDateValidation.textContent = '✓ Data di nascita verificata';
+             birthDateValidation.classList.add('text-green-500');
+             birthDateValidation.classList.remove('hidden');
+         }
+
+         // Validate name and surname codes
+         const expectedSurnameCode = generateSurnameCode(cognome);
+         const expectedNameCode = generateNameCode(nome);
+         const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+         const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+         if (fiscalSurnameCode !== expectedSurnameCode) {
+             cognomeValidation.textContent = `Il cognome non corrisponde (inserito: ${expectedSurnameCode}, nel CF: ${fiscalSurnameCode})`;
+             cognomeValidation.classList.add('text-yellow-500');
+             cognomeValidation.classList.remove('hidden');
+         } else {
+             cognomeValidation.textContent = '✓ Cognome verificato';
+             cognomeValidation.classList.add('text-green-500');
+             cognomeValidation.classList.remove('hidden');
+         }
+
+         if (fiscalNameCode !== expectedNameCode) {
+             nomeValidation.textContent = `Il nome non corrisponde (inserito: ${expectedNameCode}, nel CF: ${fiscalNameCode})`;
+             nomeValidation.classList.add('text-yellow-500');
+             nomeValidation.classList.remove('hidden');
+         } else {
+             nomeValidation.textContent = '✓ Nome verificato';
+             nomeValidation.classList.add('text-green-500');
+             nomeValidation.classList.remove('hidden');
+         }
+
+         // Overall fiscal code validation message
+         const allMatches = (decodedData.dateString === birthDate) && 
+                           (fiscalSurnameCode === expectedSurnameCode) && 
+                           (fiscalNameCode === expectedNameCode);
+         
+         if (allMatches) {
+             fiscalCodeValidation.textContent = '✓ Codice fiscale completamente verificato';
+             fiscalCodeValidation.classList.add('text-green-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         } else if (decodedData.dateString === birthDate) {
+             fiscalCodeValidation.textContent = '⚠ Data di nascita corretta, verifica nome e cognome';
+             fiscalCodeValidation.classList.add('text-yellow-500');
+             fiscalCodeValidation.classList.remove('hidden');
+         }
+     }
+
+     function validateAllFiscalCodes() {
+         let hasErrors = false;
+         const errorMessages = [];
+
+         // Helper function to validate a single fiscal code
+         function validateSingleFiscalCode(nome, cognome, codiceFiscale, birthDate, personLabel) {
+             // Check format
+             if (!/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/.test(codiceFiscale)) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Formato codice fiscale non valido`);
+                 return;
+             }
+
+             // Check control digit
+             if (!validateCheckDigit(codiceFiscale)) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Carattere di controllo del codice fiscale non corretto`);
+                 return;
+             }
+
+             // Check birth date correspondence
+             const decodedData = decodeBirthDateFromFiscalCode(codiceFiscale);
+             if (!decodedData) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Impossibile decodificare la data dal codice fiscale`);
+                 return;
+             }
+
+             if (decodedData.dateString !== birthDate) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Data di nascita non corrisponde al codice fiscale (prevista: ${decodedData.dateString})`);
+             }
+
+             // Check name and surname correspondence
+             const expectedSurnameCode = generateSurnameCode(cognome);
+             const expectedNameCode = generateNameCode(nome);
+             const fiscalSurnameCode = codiceFiscale.substring(0, 3);
+             const fiscalNameCode = codiceFiscale.substring(3, 6);
+
+             if (fiscalSurnameCode !== expectedSurnameCode) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Cognome non corrisponde al codice fiscale (inserito: ${expectedSurnameCode}, trovato: ${fiscalSurnameCode})`);
+             }
+
+             if (fiscalNameCode !== expectedNameCode) {
+                 hasErrors = true;
+                 errorMessages.push(`${personLabel}: Nome non corrisponde al codice fiscale (inserito: ${expectedNameCode}, trovato: ${fiscalNameCode})`);
+             }
+         }
+
+         // Validate main form
+         const mainForm = {
+             nome: document.getElementById('nome').value.trim(),
+             cognome: document.getElementById('cognome').value.trim(),
+             codiceFiscale: document.getElementById('codice_fiscale').value.trim(),
+             birthDate: document.getElementById('data_nascita').value
+         };
+
+         if (mainForm.nome && mainForm.cognome && mainForm.codiceFiscale && mainForm.birthDate) {
+             validateSingleFiscalCode(mainForm.nome, mainForm.cognome, mainForm.codiceFiscale, mainForm.birthDate, 'Capogruppo');
+         }
+
+         // Validate guest forms
+         document.querySelectorAll('.guest-block').forEach((block, index) => {
+             const inputs = {
+                 nome: block.querySelector('input[name*="_nome"]'),
+                 cognome: block.querySelector('input[name*="_cognome"]'),
+                 codiceFiscale: block.querySelector('input[name*="_codice_fiscale"]'),
+                 birthDate: block.querySelector('input[name*="_data_nascita"]')
+             };
+
+             if (inputs.nome && inputs.cognome && inputs.codiceFiscale && inputs.birthDate) {
+                 const values = {
+                     nome: inputs.nome.value.trim(),
+                     cognome: inputs.cognome.value.trim(),
+                     codiceFiscale: inputs.codiceFiscale.value.trim(),
+                     birthDate: inputs.birthDate.value
+                 };
+
+                 if (values.nome && values.cognome && values.codiceFiscale && values.birthDate) {
+                     const guestLabel = `Ospite ${index + 1}`;
+                     validateSingleFiscalCode(values.nome, values.cognome, values.codiceFiscale, values.birthDate, guestLabel);
+                 }
+             }
+         });
+
+         return { hasErrors, errorMessages };
+     }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  
+  <!-- Success Modal -->
+  <div id="successModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden" style="z-index: 100;">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+      <div class="mt-3 text-center">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+          <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Iscrizione Completata con Successo!</h3>
+        <div id="modalSummary" class="mt-4 px-7 py-3 text-left">
+          <!-- Summary will be injected here -->
+        </div>
+        <div class="items-center px-4 py-3">
+          <p id="success-mail-message" class="text-sm text-gray-500 mb-4">Riceverai a breve una mail di riepilogo. Controlla anche la cartella spam.</p>
+          <button id="downloadPdfButton" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">Scarica Riepilogo PDF</button>
+          <button id="closeModalButton" class="px-4 py-2 bg-gray-800 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+            Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

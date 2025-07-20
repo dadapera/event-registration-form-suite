@@ -38,8 +38,14 @@ try {
         const indexPath = path.join(instancePath, 'index.html');
         const instanceModulePath = path.join(instancePath, 'instance.js');
 
-        if (fs.existsSync(configPath) && fs.existsSync(dbPath) && fs.existsSync(indexPath) && fs.existsSync(instanceModulePath)) {
+        if (fs.existsSync(configPath) && fs.existsSync(indexPath) && fs.existsSync(instanceModulePath)) {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            
+            // Create database if it doesn't exist
+            if (!fs.existsSync(dbPath)) {
+                log('INFO', `Database file not found for instance ${instanceName}, creating new database`, { dbPath });
+            }
+            
             const db = new sqlite3.Database(dbPath, (err) => {
                 if (err) {
                     log('ERROR', `Failed to connect to database for instance ${instanceName}`, { error: err.message, dbPath });
@@ -68,7 +74,7 @@ try {
 
             log('SYSTEM', `Instance '${instanceName}' loaded and mounted.`);
         } else {
-            log('WARN', `Instance '${instanceName}' is missing required files (config.json, database.sqlite, index.html, instance.js) and will be skipped.`);
+            log('WARN', `Instance '${instanceName}' is missing required files (config.json, index.html, instance.js) and will be skipped.`);
         }
     }
 } catch (error) {

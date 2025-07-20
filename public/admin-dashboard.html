@@ -97,42 +97,35 @@
       }
     }
     
-    function displayRegistrations(registrations) {
+    function displayRegistrations(allPersons) {
       const container = document.getElementById('registrations');
       const stats = document.getElementById('stats');
       const roomStats = document.getElementById('roomStats');
       
-      if (registrations.length === 0) {
+      if (allPersons.length === 0) {
         container.innerHTML = '<p class="text-gray-500">Nessuna registrazione trovata</p>';
         stats.classList.add('hidden');
         roomStats.classList.add('hidden');
         return;
       }
       
-      // Calculate stats
-      const totalRegistrations = registrations.length;
-      let totalPersonsCalc = 0;
-
-      registrations.forEach(reg => {
-        totalPersonsCalc += 1; // Capogruppo
-        if (reg.ospiti_dettagli && reg.ospiti_dettagli.trim() !== '') {
-          // Count guests by splitting the string.
-          totalPersonsCalc += reg.ospiti_dettagli.split(' | ').length;
-        }
-      });
+      // Calculate stats - only count capogruppo for registrations
+      const capogruppiOnly = allPersons.filter(person => person.tipo_persona === 'Capogruppo');
+      const totalRegistrations = capogruppiOnly.length;
+      const totalPersonsCalc = allPersons.length; // All persons (capogruppo + guests)
       
-      const totalRevenue = registrations.reduce((sum, reg) => sum + (reg.costo_totale_gruppo || 0), 0);
+      const totalRevenue = capogruppiOnly.reduce((sum, reg) => sum + (reg.costo_totale_gruppo || 0), 0);
       
       document.getElementById('totalCount').textContent = totalRegistrations;
       document.getElementById('totalPersons').textContent = totalPersonsCalc;
       document.getElementById('totalRevenue').textContent = '€' + totalRevenue.toFixed(2);
       stats.classList.remove('hidden');
 
-      // Calculate and display room stats
-      const totalSingle = registrations.reduce((sum, reg) => sum + (reg.camera_singola || 0), 0);
-      const totalDouble = registrations.reduce((sum, reg) => sum + (reg.camera_doppia || 0), 0);
-      const totalTriple = registrations.reduce((sum, reg) => sum + (reg.camera_tripla || 0), 0);
-      const totalQuadruple = registrations.reduce((sum, reg) => sum + (reg.camera_quadrupla || 0), 0);
+      // Calculate and display room stats - only from capogruppo rows
+      const totalSingle = capogruppiOnly.reduce((sum, reg) => sum + (reg.camera_singola || 0), 0);
+      const totalDouble = capogruppiOnly.reduce((sum, reg) => sum + (reg.camera_doppia || 0), 0);
+      const totalTriple = capogruppiOnly.reduce((sum, reg) => sum + (reg.camera_tripla || 0), 0);
+      const totalQuadruple = capogruppiOnly.reduce((sum, reg) => sum + (reg.camera_quadrupla || 0), 0);
 
       document.getElementById('totalSingleRooms').textContent = totalSingle;
       document.getElementById('totalDoubleRooms').textContent = totalDouble;
@@ -140,63 +133,78 @@
       document.getElementById('totalQuadrupleRooms').textContent = totalQuadruple;
       roomStats.classList.remove('hidden');
       
-      // Create table
+      // Create table - each person gets their own row
       let table = '<table class="min-w-full bg-white border border-gray-200 text-xs">'; // Reduced base font size
       table += '<thead class="bg-gray-50"><tr>';
-      table += '<th class="px-2 py-1 border-b text-left">ID</th>';
-      table += '<th class="px-2 py-1 border-b text-left">Capogruppo</th>';
+      table += '<th class="px-2 py-1 border-b text-left">Reg. ID</th>';
+      table += '<th class="px-2 py-1 border-b text-left">Tipo</th>';
+      table += '<th class="px-2 py-1 border-b text-left">Pos.</th>';
+      table += '<th class="px-2 py-1 border-b text-left">Nome Cognome</th>';
       table += '<th class="px-2 py-1 border-b text-left">Contatti</th>';
       table += '<th class="px-2 py-1 border-b text-left">Anagrafica</th>';
       table += '<th class="px-2 py-1 border-b text-left">Partenza</th>';
       table += '<th class="px-2 py-1 border-b text-left">Camere</th>';
       table += '<th class="px-2 py-1 border-b text-left">Costi (€)</th>';
-      table += '<th class="px-2 py-1 border-b text-left">Anagrafica Ospiti</th>';
       table += '<th class="px-2 py-1 border-b text-left">Fatt. Aziendale</th>';
       table += '<th class="px-2 py-1 border-b text-left">Data Registrazione</th>';
       table += '</tr></thead><tbody>';
       
-      registrations.forEach(reg => {
-        table += '<tr class="hover:bg-gray-50 align-top">';
-        table += `<td class="px-2 py-1 border-b">${reg.id}</td>`;
-        table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
-        table += `<td class="px-2 py-1 border-b">${reg.email || '-'}<br>${reg.cellulare || '-'}</td>`;
-        table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${reg.indirizzo || '-'}<br>CF: ${reg.codice_fiscale || '-'}</td>`;
-        table += `<td class="px-2 py-1 border-b">${reg.partenza || '-'}</td>`;
+      let currentRegistrationId = null;
+      
+      allPersons.forEach(person => {
+        // Add visual separator between different registrations
+        const isNewRegistration = currentRegistrationId !== person.registrazione_id;
+        const rowClass = isNewRegistration ? 'hover:bg-gray-50 align-top border-t-2 border-blue-200' : 'hover:bg-gray-50 align-top';
+        currentRegistrationId = person.registrazione_id;
         
+        // Color coding: Capogruppo = white background, Ospite = light blue background
+        const bgClass = person.tipo_persona === 'Capogruppo' ? 'bg-white' : 'bg-blue-25';
+        
+        table += `<tr class="${rowClass} ${bgClass}">`;
+        table += `<td class="px-2 py-1 border-b">${person.registrazione_id}</td>`;
+        
+        // Tipo persona with visual indicator
+        const tipoIcon = person.tipo_persona === 'Capogruppo' ? '👑' : '👤';
+        table += `<td class="px-2 py-1 border-b"><span class="font-medium">${tipoIcon} ${person.tipo_persona}</span></td>`;
+        
+        table += `<td class="px-2 py-1 border-b text-center">${person.posizione_gruppo}</td>`;
+        table += `<td class="px-2 py-1 border-b font-medium">${person.nome} ${person.cognome}</td>`;
+        table += `<td class="px-2 py-1 border-b">${person.email || '-'}<br>${person.cellulare || '-'}</td>`;
+        table += `<td class="px-2 py-1 border-b">Nato: ${person.data_nascita ? new Date(person.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${person.indirizzo || '-'}<br>CF: ${person.codice_fiscale || '-'}</td>`;
+        table += `<td class="px-2 py-1 border-b">${person.partenza || '-'}</td>`;
+        
+        // Room info only for Capogruppo
         let roomCountsText = '';
-        if (reg.camera_singola > 0) roomCountsText += `S: ${reg.camera_singola} `; 
-        if (reg.camera_doppia > 0) roomCountsText += `D: ${reg.camera_doppia} `; 
-        if (reg.camera_tripla > 0) roomCountsText += `T: ${reg.camera_tripla} `; 
-        if (reg.camera_quadrupla > 0) roomCountsText += `Q: ${reg.camera_quadrupla} `;
+        if (person.tipo_persona === 'Capogruppo') {
+          if (person.camera_singola > 0) roomCountsText += `S: ${person.camera_singola} `; 
+          if (person.camera_doppia > 0) roomCountsText += `D: ${person.camera_doppia} `; 
+          if (person.camera_tripla > 0) roomCountsText += `T: ${person.camera_tripla} `; 
+          if (person.camera_quadrupla > 0) roomCountsText += `Q: ${person.camera_quadrupla} `;
+        }
         table += `<td class="px-2 py-1 border-b">${roomCountsText.trim() || '-'}</td>`;
 
-        table += `<td class="px-2 py-1 border-b"><span class="font-semibold">${(reg.costo_totale_gruppo || 0).toFixed(2)}</span></td>`;
+        // Cost info only for Capogruppo
+        const costText = person.tipo_persona === 'Capogruppo' && person.costo_totale_gruppo 
+          ? `<span class="font-semibold">${person.costo_totale_gruppo.toFixed(2)}</span>` 
+          : '-';
+        table += `<td class="px-2 py-1 border-b">${costText}</td>`;
         
+        // Billing info only for Capogruppo
         table += '<td class="px-2 py-1 border-b">';
-        if (reg.ospiti_dettagli) {
-          const ospitiList = reg.ospiti_dettagli.split(' | ').map(ospite => {
-            const match = ospite.match(/(.+) \((\d{4}-\d{2}-\d{2}), (.+), (.+)\)/);
-            if (match) {
-              return `<li>${match[1]} (Nato/a: ${match[2]}, CF: ${match[3]}, Ind: ${match[4]})</li>`;
-            }
-            return `<li>${ospite}</li>`;
-          }).join('');
-          const ospitiHtml = `<ul class="list-disc pl-5">${ospitiList}</ul>`;
-          table += ospitiHtml;
-        } else {
-          table += '<span class="text-gray-400">-</span>';
-        }
-        table += '</td>';
-
-        table += '<td class="px-2 py-1 border-b">';
-        if (reg.fatturazione_aziendale) {
-          table += `Sì<br><div class="max-w-xs whitespace-pre-wrap text-xs">RS: ${reg.ragione_sociale || '-'}<br>PIVA: ${reg.partita_iva || '-'}<br>CF Az: ${reg.codice_fiscale_azienda || '-'}<br>Sede: ${reg.indirizzo_sede_legale || '-'}<br>SDI: ${reg.codice_sdi || '-'}<br>PEC: ${reg.pec_azienda || '-'}</div>`;
-        } else {
+        if (person.tipo_persona === 'Capogruppo' && person.fatturazione_aziendale) {
+          table += `Sì<br><div class="max-w-xs whitespace-pre-wrap text-xs">RS: ${person.ragione_sociale || '-'}<br>PIVA: ${person.partita_iva || '-'}<br>CF Az: ${person.codice_fiscale_azienda || '-'}<br>Sede: ${person.indirizzo_sede_legale || '-'}<br>SDI: ${person.codice_sdi || '-'}<br>PEC: ${person.pec_azienda || '-'}</div>`;
+        } else if (person.tipo_persona === 'Capogruppo') {
           table += 'No';
+        } else {
+          table += '-';
         }
         table += '</td>';
         
-        table += `<td class="px-2 py-1 border-b">${reg.data_iscrizione ? new Date(reg.data_iscrizione).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>`;
+        // Registration date only for Capogruppo
+        const dateText = person.tipo_persona === 'Capogruppo' && person.data_iscrizione 
+          ? new Date(person.data_iscrizione).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '-';
+        table += `<td class="px-2 py-1 border-b">${dateText}</td>`;
         table += '</tr>';
       });
       
