@@ -1,17 +1,26 @@
 {
   "name": "maeviaggi-registration-system",
   "version": "1.0.0",
-  "description": "Sistema di registrazione per eventi di viaggio con calcolo dinamico dei prezzi",
-  "main": "server.js",
+  "description": "Sistema di registrazione per eventi di viaggio con architettura microservizi containerizzata",
+  "main": "services/base/service.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "docker-compose -f docker-compose.microservices.yml up -d",
+    "dev": "docker-compose -f docker-compose.microservices.yml up",
+    "stop": "docker-compose -f docker-compose.microservices.yml down",
+    "prune": "docker system prune -f",
+    "build": "docker-compose -f docker-compose.microservices.yml build",
+    "logs": "docker-compose -f docker-compose.microservices.yml logs -f",
+    "deploy": "./deploy-microservices.sh",
+    "deploy:win": "./deploy-microservices.bat"
   },
   "keywords": [
     "travel",
     "registration",
     "event",
     "booking",
+    "microservices",
+    "docker",
+    "containerized",
     "nodejs",
     "express",
     "sqlite"
@@ -23,9 +32,10 @@
     "chalk": "^4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "dotenv-flow": "^4.1.0",
     "express": "^4.19.2",
     "nodemailer": "^6.9.13",
-    "puppeteer": "^21.0.0",
+    "pdfkit": "^0.15.0",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
