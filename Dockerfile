@@ -1,6 +1,13 @@
 # Use official Node.js runtime as base image
 FROM node:18-alpine as base
 
+# Install fonts for PDF generation
+RUN apk update && apk add --no-cache \
+    freetype \
+    freetype-dev \
+    ca-certificates \
+    ttf-freefont
+
 # Set working directory in container
 WORKDIR /app
 

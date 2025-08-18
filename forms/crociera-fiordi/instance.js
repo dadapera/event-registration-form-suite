@@ -1,12 +1,16 @@
 const express = require('express');
 const path = require('path');
-const log = require('../../utils/logger'); // Note the path change
-const { sendMail } = require('../../utils/mailer');
+const fs = require('fs');
+const { generateRegistrationPDF } = require('./utils/pdfGenerator');
+const log = require('./utils/logger'); // Fixed path for microservices
+const { createMailer } = require('./utils/mailer');
+const { loadInstanceEnvironment } = require('./utils/envLoader');
 
 function createTables(db, instanceName) {
     db.serialize(() => {
         db.run(`CREATE TABLE IF NOT EXISTS registrazioni (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT UNIQUE,
       nome TEXT, cognome TEXT, email TEXT, cellulare TEXT, data_nascita TEXT,
       indirizzo TEXT, codice_fiscale TEXT, partenza TEXT,
       camera_singola INTEGER DEFAULT 0, camera_doppia INTEGER DEFAULT 0,
@@ -33,7 +37,183 @@ function createTables(db, instanceName) {
     });
 }
 
+// Function to generate PDF summary content
+function generateSummaryHTML(registrationData, partenzaText) {
+    return `
+        <!DOCTYPE html>
+        <html lang="it">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Riepilogo Iscrizione</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                    background: white;
+                }
+                .container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    border-bottom: 2px solid #1e40af;
+                    padding-bottom: 15px;
+                }
+                .section {
+                    margin: 20px 0;
+                    page-break-inside: avoid;
+                }
+                .section-title {
+                    font-weight: bold;
+                    color: #1e40af;
+                    border-bottom: 1px solid #1e40af;
+                    padding-bottom: 5px;
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                }
+                .grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                    margin-bottom: 10px;
+                }
+                .grid-full {
+                    grid-column: 1 / -1;
+                }
+                .guest-block {
+                    border: 1px solid #e5e7eb;
+                    border-radius: 5px;
+                    padding: 15px;
+                    margin: 10px 0;
+                    page-break-inside: avoid;
+                }
+                .guest-title {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    color: #1e40af;
+                }
+                .total-cost {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #1e40af;
+                    margin-top: 15px;
+                }
+                p {
+                    margin: 8px 0;
+                    word-wrap: break-word;
+                }
+                strong {
+                    font-weight: 600;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .container { box-shadow: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Riepilogo Iscrizione</h1>
+                    <p>ID Registrazione: ${registrationData.id}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Dettagli Evento</div>
+                    ${registrationData.user_id ? `<p><strong>ID Utente:</strong> ${registrationData.user_id}</p>` : ''}
+                    <p><strong>Evento:</strong> ${registrationData.evento}</p>
+                    <p><strong>Aeroporto di Partenza:</strong> ${partenzaText}</p>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Dati Capogruppo</div>
+                    <div class="grid">
+                        <p><strong>Nome:</strong> ${registrationData.nome}</p>
+                        <p><strong>Cognome:</strong> ${registrationData.cognome}</p>
+                        <p><strong>Data di Nascita:</strong> ${new Date(registrationData.data_nascita).toLocaleDateString('it-IT')}</p>
+                        <p><strong>Codice Fiscale:</strong> ${registrationData.codice_fiscale}</p>
+                        <p><strong>Email:</strong> ${registrationData.email}</p>
+                        <p><strong>Cellulare:</strong> ${registrationData.cellulare}</p>
+                    </div>
+                    <p><strong>Indirizzo:</strong> ${registrationData.indirizzo}</p>
+                </div>
+
+                ${registrationData.ospiti && registrationData.ospiti.length > 0 ? `
+                <div class="section">
+                    <div class="section-title">Accompagnatori</div>
+                    ${registrationData.ospiti.map((ospite, index) => `
+                        <div class="guest-block">
+                            <div class="guest-title">Ospite ${index + 1}</div>
+                            <div class="grid">
+                                <p><strong>Nome:</strong> ${ospite.nome}</p>
+                                <p><strong>Cognome:</strong> ${ospite.cognome}</p>
+                                <p><strong>Data di Nascita:</strong> ${ospite.data_nascita ? new Date(ospite.data_nascita).toLocaleDateString('it-IT') : 'N/D'}</p>
+                                <p><strong>Codice Fiscale:</strong> ${ospite.codice_fiscale || 'N/D'}</p>
+                            </div>
+                            <p><strong>Indirizzo:</strong> ${ospite.indirizzo || 'Non specificato'}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+
+                ${registrationData.fatturazione_aziendale ? `
+                <div class="section">
+                    <div class="section-title">Dati Fatturazione Aziendale</div>
+                    <p class="grid-full"><strong>Ragione Sociale:</strong> ${registrationData.dati_fatturazione.ragione_sociale}</p>
+                    <div class="grid">
+                        <p><strong>Partita IVA:</strong> ${registrationData.dati_fatturazione.partita_iva}</p>
+                        <p><strong>Codice Fiscale Azienda:</strong> ${registrationData.dati_fatturazione.codice_fiscale_azienda || 'N/D'}</p>
+                        <p><strong>Codice SDI:</strong> ${registrationData.dati_fatturazione.codice_sdi || 'N/D'}</p>
+                        <p><strong>PEC:</strong> ${registrationData.dati_fatturazione.pec_azienda || 'N/D'}</p>
+                    </div>
+                    <p><strong>Sede Legale:</strong> ${registrationData.dati_fatturazione.indirizzo_sede_legale}</p>
+                </div>
+                ` : ''}
+
+                <div class="section">
+                    <div class="section-title">Riepilogo Camere e Costi</div>
+                    <p><strong>Composizione Camere:</strong> ${
+                        Object.entries(registrationData)
+                            .filter(([key, value]) => key.startsWith('camera_') && value > 0)
+                            .map(([key, value]) => `${value} ${key.replace(/_/g, ' ')}`)
+                            .join(', ') || 'N/D'
+                    }</p>
+                    <div class="total-cost">
+                        <strong>Costo Totale: €${registrationData.costo_totale_gruppo.toFixed(2)}</strong>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+}
+
+// PDF generation is now handled by utils/pdfGenerator.js
+
 module.exports = function(db, instanceName, config) {
+    // Load instance-specific environment variables
+    const instancePath = __dirname;
+    const { envVars: formEnvVars, getEnvVar: getFormEnvVar } = loadInstanceEnvironment(instancePath, instanceName);
+    
+    // Create instance-specific mailer with form environment variables
+    const envConfig = {
+        SMTP_HOST: getFormEnvVar('SMTP_HOST'),
+        SMTP_PORT: getFormEnvVar('SMTP_PORT'),
+        SMTP_USER: getFormEnvVar('SMTP_USER'),
+        SMTP_PASS: getFormEnvVar('SMTP_PASS'),
+        EMAIL_FROM_NAME: getFormEnvVar('EMAIL_FROM_NAME'),
+        EMAIL_FROM_ADDRESS: getFormEnvVar('EMAIL_FROM_ADDRESS')
+    };
+    const { sendMail } = createMailer(envConfig);
+    
     // Ensure tables are created for this instance
     createTables(db, instanceName);
 
@@ -50,14 +230,108 @@ module.exports = function(db, instanceName, config) {
     router.get('/api/config', (req, res) => {
         log('DEBUG', `Request for config received for instance '${instanceName}'`);
         res.json({
-            calculationDate: process.env.CALCULATION_DATE
+            calculationDate: getFormEnvVar('CALCULATION_DATE')
         });
+    });
+
+    router.post('/api/generate-pdf/:registrationId', async (req, res) => {
+        const registrationId = req.params.registrationId;
+        log('DEBUG', `Request to generate PDF for registration ${registrationId} in instance '${instanceName}'`);
+        
+        try {
+            // Get registration data from database
+            const query = `
+                SELECT 
+                    r.*, 
+                    df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                    df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+                FROM registrazioni r
+                LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
+                WHERE r.id = ?
+            `;
+            
+            db.get(query, [registrationId], async (err, registration) => {
+                if (err) {
+                    log('ERROR', `DB error getting registration ${registrationId}: ${err.message}`);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                if (!registration) {
+                    log('WARN', `Registration ${registrationId} not found for PDF generation`);
+                    return res.status(404).json({ error: 'Registration not found' });
+                }
+                
+                // Get guests data
+                const guestsQuery = `
+                    SELECT nome, cognome, data_nascita, codice_fiscale, indirizzo
+                    FROM accompagnatori_dettagli
+                    WHERE registrazione_id = ?
+                    ORDER BY id
+                `;
+                
+                db.all(guestsQuery, [registrationId], async (err, guests) => {
+                    if (err) {
+                        log('ERROR', `DB error getting guests for registration ${registrationId}: ${err.message}`);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    // Prepare registration data with guests
+                    const registrationData = {
+                        ...registration,
+                        ospiti: guests || [],
+                        dati_fatturazione: registration.fatturazione_aziendale ? {
+                            ragione_sociale: registration.ragione_sociale,
+                            partita_iva: registration.partita_iva,
+                            codice_fiscale_azienda: registration.codice_fiscale_azienda,
+                            indirizzo_sede_legale: registration.indirizzo_sede_legale,
+                            codice_sdi: registration.codice_sdi,
+                            pec_azienda: registration.pec_azienda
+                        } : null
+                    };
+                    
+                    // Map partenza to readable text
+                    const partenzaMapping = {
+                        'autonomo': 'Arrivo autonomo',
+                        'fco': 'FCO - Roma Fiumicino',
+                        'nap': 'NAP - Napoli',
+                        'bcn': 'BCN - Barcellona',
+                        'mpx': 'MXP - Malpensa'
+                    };
+                    const partenzaText = partenzaMapping[registration.partenza] || registration.partenza;
+                    
+                    try {
+                        // Generate PDF
+                        const pdfBuffer = await generateRegistrationPDF(registrationData, partenzaText, registration.evento);
+                        
+                        // Set response headers for PDF download
+                        const safeEventName = registration.evento.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                        const filename = `riepilogo-iscrizione-${safeEventName}-${registrationId}.pdf`;
+                        
+                        res.setHeader('Content-Type', 'application/pdf');
+                        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+                        res.setHeader('Content-Length', pdfBuffer.length);
+                        
+                        res.send(pdfBuffer);
+                        
+                        log('INFO', `PDF generated successfully for registration ${registrationId}`);
+                        
+                    } catch (pdfError) {
+                        log('ERROR', `Error generating PDF for registration ${registrationId}: ${pdfError.message}`);
+                        res.status(500).json({ error: 'PDF generation failed' });
+                    }
+                });
+            });
+            
+        } catch (error) {
+            log('ERROR', `Error in PDF generation endpoint: ${error.message}`);
+            res.status(500).json({ error: 'Internal server error' });
+        }
     });
 
     router.post('/api/registrati', async (req, res) => {
         log('DEBUG', `New registration for '${instanceName}'`, { body: req.body });
         const {
-            nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
+            user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
             partenza, evento,
             camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
             costo_totale_gruppo,
@@ -86,16 +360,16 @@ module.exports = function(db, instanceName, config) {
 
             const mainInsertStmt = db.prepare(`
                 INSERT INTO registrazioni (
-                    nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
+                    user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
                     partenza, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
                     costo_totale_gruppo, evento, fatturazione_aziendale,
                     data_iscrizione
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
 
             const registrazioneId = await new Promise((resolve, reject) => {
                 mainInsertStmt.run(
-                    nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
+                    user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
                     partenza, camera_singola || 0, camera_doppia || 0, camera_tripla || 0, camera_quadrupla || 0,
                     costo_totale_gruppo, evento, fatturazione_aziendale,
                     data_iscrizione_iso,
@@ -203,44 +477,159 @@ module.exports = function(db, instanceName, config) {
 
         } catch (err) {
             log('ERROR', `Transaction failed for '${instanceName}', rolling back.`, { error: err.message });
-            db.run("ROLLBACK"); // Attempt to rollback
+            
+            // Properly handle rollback with error checking
+            try {
+                await new Promise((resolve, reject) => {
+                    db.run("ROLLBACK", rollbackErr => {
+                        if (rollbackErr) {
+                            log('ERROR', `Rollback failed for '${instanceName}': ${rollbackErr.message}`);
+                            reject(rollbackErr);
+                        } else {
+                            log('DEBUG', `Rollback successful for '${instanceName}'`);
+                            resolve();
+                        }
+                    });
+                });
+            } catch (rollbackError) {
+                log('ERROR', `Rollback error for '${instanceName}': ${rollbackError.message}`);
+            }
+            
             res.status(500).json({ success: false, error: 'Errore durante il salvataggio dei dati nel database.' });
         }
     });
 
     router.get('/api/export', (req, res) => {
-        log('DEBUG', `Export CSV for '${instanceName}'`);
-        const query = `
+        log('DEBUG', `Export CSV for '${instanceName}' with individual rows for each person`);
+        
+        // First get all registrations (capogruppo)
+        const registrationQuery = `
     SELECT
-      r.id AS registrazione_id, r.evento, strftime('%Y-%m-%d %H:%M:%S', r.data_iscrizione) AS data_registrazione,
-      r.nome, r.cognome, r.email, r.cellulare, r.data_nascita, r.indirizzo, r.codice_fiscale, r.partenza,
-      r.camera_singola, r.camera_doppia, r.camera_tripla, r.camera_quadrupla, r.costo_totale_gruppo,
-      ( SELECT GROUP_CONCAT(
-          IFNULL(replace(g.nome, '''', ''''''), '-') || ' ' || IFNULL(replace(g.cognome, '''', ''''''), '-') ||
-          ' (' || IFNULL(g.data_nascita, '-') || ', ' || IFNULL(replace(g.codice_fiscale, '''', ''''''), '-') || ', ' ||
-          IFNULL(replace(g.indirizzo, '''', ''''''), '-') || ')', ' | '
-        ) FROM accompagnatori_dettagli g WHERE g.registrazione_id = r.id
-      ) AS ospiti_dettagli,
-      r.fatturazione_aziendale, df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-      df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+              r.id AS registrazione_id, r.user_id, r.evento, 
+              strftime('%Y-%m-%d %H:%M:%S', r.data_iscrizione) AS data_registrazione,
+              r.nome, r.cognome, r.email, r.cellulare, r.data_nascita, r.indirizzo, 
+              r.codice_fiscale, r.partenza, r.camera_singola, r.camera_doppia, 
+              r.camera_tripla, r.camera_quadrupla, r.costo_totale_gruppo,
+              r.fatturazione_aziendale, df.ragione_sociale, df.partita_iva, 
+              df.codice_fiscale_azienda, df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
     FROM registrazioni r
     LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
-    GROUP BY r.id ORDER BY r.data_iscrizione DESC
+            ORDER BY r.data_iscrizione DESC
   `;
 
-        db.all(query, (err, rows) => {
+        db.all(registrationQuery, (err, registrations) => {
             if (err) {
                 log('ERROR', `DB error on CSV export for '${instanceName}'`, { error: err.message });
                 return res.status(500).json({ error: err.message });
             }
-            if (rows.length === 0) {
+            if (registrations.length === 0) {
                 log('WARN', `CSV export for '${instanceName}' - no data.`);
                 return res.status(404).json({ error: 'Nessuna registrazione trovata.' });
             }
 
-            const safeRows = rows.map(row => ({ ...row }));
-            const header = Object.keys(safeRows[0]).map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(",");
-            const csvRows = safeRows.map(row =>
+            // Get all guests for all registrations
+            const guestsQuery = `
+                SELECT registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale
+                FROM accompagnatori_dettagli
+                ORDER BY registrazione_id, id
+            `;
+
+            db.all(guestsQuery, (err, guests) => {
+                if (err) {
+                    log('ERROR', `DB error getting guests for CSV export '${instanceName}'`, { error: err.message });
+                    return res.status(500).json({ error: err.message });
+                }
+
+                // Group guests by registration ID
+                const guestsByRegistration = {};
+                guests.forEach(guest => {
+                    if (!guestsByRegistration[guest.registrazione_id]) {
+                        guestsByRegistration[guest.registrazione_id] = [];
+                    }
+                    guestsByRegistration[guest.registrazione_id].push(guest);
+                });
+
+                // Build the CSV rows - each person gets their own row
+                const csvRows = [];
+                
+                registrations.forEach(registration => {
+                    // Add capogruppo row
+                    const capogruppoRow = {
+                        registrazione_id: registration.registrazione_id,
+                        user_id: registration.user_id,
+                        evento: registration.evento,
+                        data_registrazione: registration.data_registrazione,
+                        tipo_persona: 'Capogruppo',
+                        posizione_gruppo: 1,
+                        nome: registration.nome,
+                        cognome: registration.cognome,
+                        email: registration.email,
+                        cellulare: registration.cellulare,
+                        data_nascita: registration.data_nascita,
+                        indirizzo: registration.indirizzo,
+                        codice_fiscale: registration.codice_fiscale,
+                        partenza: registration.partenza,
+                        camera_singola: registration.camera_singola,
+                        camera_doppia: registration.camera_doppia,
+                        camera_tripla: registration.camera_tripla,
+                        camera_quadrupla: registration.camera_quadrupla,
+                        costo_totale_gruppo: registration.costo_totale_gruppo,
+                        fatturazione_aziendale: registration.fatturazione_aziendale,
+                        ragione_sociale: registration.ragione_sociale,
+                        partita_iva: registration.partita_iva,
+                        codice_fiscale_azienda: registration.codice_fiscale_azienda,
+                        indirizzo_sede_legale: registration.indirizzo_sede_legale,
+                        codice_sdi: registration.codice_sdi,
+                        pec_azienda: registration.pec_azienda
+                    };
+                    csvRows.push(capogruppoRow);
+
+                    // Add guest rows
+                    const registrationGuests = guestsByRegistration[registration.registrazione_id] || [];
+                    registrationGuests.forEach((guest, index) => {
+                        const guestRow = {
+                            registrazione_id: registration.registrazione_id,
+                            user_id: registration.user_id,
+                            evento: registration.evento,
+                            data_registrazione: registration.data_registrazione,
+                            tipo_persona: 'Ospite',
+                            posizione_gruppo: index + 2,
+                            nome: guest.nome,
+                            cognome: guest.cognome,
+                            email: '', // Guests don't have separate email/phone
+                            cellulare: '',
+                            data_nascita: guest.data_nascita,
+                            indirizzo: guest.indirizzo,
+                            codice_fiscale: guest.codice_fiscale,
+                            partenza: registration.partenza, // Same as capogruppo
+                            camera_singola: '', // Room details only on capogruppo row
+                            camera_doppia: '',
+                            camera_tripla: '',
+                            camera_quadrupla: '',
+                            costo_totale_gruppo: '', // Cost only on capogruppo row
+                            fatturazione_aziendale: '', // Billing only on capogruppo row
+                            ragione_sociale: '',
+                            partita_iva: '',
+                            codice_fiscale_azienda: '',
+                            indirizzo_sede_legale: '',
+                            codice_sdi: '',
+                            pec_azienda: ''
+                        };
+                        csvRows.push(guestRow);
+                    });
+                });
+
+                // Generate CSV
+                if (csvRows.length === 0) {
+                    log('WARN', `CSV export for '${instanceName}' - no processed data.`);
+                    return res.status(404).json({ error: 'Nessun dato processato.' });
+                }
+
+                const header = Object.keys(csvRows[0]).map(key => 
+                    key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                ).join(",");
+
+                const csvRowStrings = csvRows.map(row =>
                 Object.values(row).map(value => {
                     const stringValue = value === null || value === undefined ? '' : String(value);
                     if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
@@ -251,36 +640,112 @@ module.exports = function(db, instanceName, config) {
             );
 
             res.header("Content-Type", "text/csv; charset=utf-8");
-            res.attachment(`registrazioni_${instanceName}.csv`);
-            res.send(`${header}\n${csvRows.join("\n")}`);
+                res.attachment(`registrazioni_${instanceName}_dettagliate.csv`);
+                res.send(`${header}\n${csvRowStrings.join("\n")}`);
+                
+                log('INFO', `CSV export completed for '${instanceName}': ${csvRows.length} total rows (${registrations.length} registrations)`);
+            });
         });
     });
 
     router.get('/api/registrations', (req, res) => {
-        log('DEBUG', `Request for all registrations for '${instanceName}'`);
-        const query = `
+        log('DEBUG', `Request for all registrations for '${instanceName}' with individual rows`);
+        
+        // Get registrations with expanded person rows for admin dashboard
+        const registrationQuery = `
     SELECT
-      r.*, strftime('%Y-%m-%d %H:%M:%S', r.data_iscrizione) AS data_iscrizione_ft,
-      df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda, df.indirizzo_sede_legale,
-      df.codice_sdi, df.pec_azienda,
-      ( SELECT GROUP_CONCAT(
-          IFNULL(replace(g.nome, '''', ''''''), '-') || ' ' || IFNULL(replace(g.cognome, '''', ''''''), '-') ||
-          ' (' || IFNULL(g.data_nascita, '-') || ', ' || IFNULL(replace(g.codice_fiscale, '''', ''''''), '-') || ', ' ||
-          IFNULL(replace(g.indirizzo, '''', ''''''), '-') || ')', ' | '
-        ) FROM accompagnatori_dettagli g WHERE g.registrazione_id = r.id
-      ) AS ospiti_dettagli
+              r.id AS registrazione_id, r.user_id, r.evento, 
+              strftime('%Y-%m-%d %H:%M:%S', r.data_iscrizione) AS data_iscrizione_ft,
+              r.nome, r.cognome, r.email, r.cellulare, r.data_nascita, r.indirizzo, 
+              r.codice_fiscale, r.partenza, r.camera_singola, r.camera_doppia, 
+              r.camera_tripla, r.camera_quadrupla, r.costo_totale_gruppo,
+              r.fatturazione_aziendale, df.ragione_sociale, df.partita_iva, 
+              df.codice_fiscale_azienda, df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
     FROM registrazioni r
     LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
-    GROUP BY r.id ORDER BY r.data_iscrizione DESC
+            ORDER BY r.data_iscrizione DESC
   `;
 
-        db.all(query, (err, rows) => {
+        db.all(registrationQuery, (err, registrations) => {
             if (err) {
                 log('ERROR', `DB error for admin registrations '${instanceName}'`, { error: err.message });
                 return res.status(500).json({ error: err.message });
             }
-            const processedRows = rows.map(row => ({ ...row, data_iscrizione: row.data_iscrizione_ft }));
-            res.json(processedRows);
+
+            // Get all guests for admin dashboard
+            const guestsQuery = `
+                SELECT registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale
+                FROM accompagnatori_dettagli
+                ORDER BY registrazione_id, id
+            `;
+
+            db.all(guestsQuery, (err, guests) => {
+                if (err) {
+                    log('ERROR', `DB error getting guests for admin dashboard '${instanceName}'`, { error: err.message });
+                    return res.status(500).json({ error: err.message });
+                }
+
+                // Group guests by registration ID
+                const guestsByRegistration = {};
+                guests.forEach(guest => {
+                    if (!guestsByRegistration[guest.registrazione_id]) {
+                        guestsByRegistration[guest.registrazione_id] = [];
+                    }
+                    guestsByRegistration[guest.registrazione_id].push(guest);
+                });
+
+                // Build expanded rows for admin dashboard
+                const expandedRows = [];
+                
+                registrations.forEach(registration => {
+                    // Add capogruppo row
+                    const capogruppoRow = {
+                        ...registration,
+                        tipo_persona: 'Capogruppo',
+                        posizione_gruppo: 1,
+                        data_iscrizione: registration.data_iscrizione_ft
+                    };
+                    expandedRows.push(capogruppoRow);
+
+                    // Add guest rows
+                    const registrationGuests = guestsByRegistration[registration.registrazione_id] || [];
+                    registrationGuests.forEach((guest, index) => {
+                        const guestRow = {
+                            registrazione_id: registration.registrazione_id,
+                            user_id: registration.user_id,
+                            evento: registration.evento,
+                            data_iscrizione_ft: registration.data_iscrizione_ft,
+                            data_iscrizione: registration.data_iscrizione_ft,
+                            tipo_persona: 'Ospite',
+                            posizione_gruppo: index + 2,
+                            nome: guest.nome,
+                            cognome: guest.cognome,
+                            email: '', // Guests don't have separate email/phone
+                            cellulare: '',
+                            data_nascita: guest.data_nascita,
+                            indirizzo: guest.indirizzo,
+                            codice_fiscale: guest.codice_fiscale,
+                            partenza: registration.partenza, // Same as capogruppo
+                            camera_singola: '',
+                            camera_doppia: '',
+                            camera_tripla: '',
+                            camera_quadrupla: '',
+                            costo_totale_gruppo: '',
+                            fatturazione_aziendale: '',
+                            ragione_sociale: '',
+                            partita_iva: '',
+                            codice_fiscale_azienda: '',
+                            indirizzo_sede_legale: '',
+                            codice_sdi: '',
+                            pec_azienda: ''
+                        };
+                        expandedRows.push(guestRow);
+                    });
+                });
+
+                log('INFO', `Admin registrations request completed for '${instanceName}': ${expandedRows.length} total rows (${registrations.length} registrations)`);
+                res.json(expandedRows);
+            });
         });
     });
 
@@ -288,12 +753,12 @@ module.exports = function(db, instanceName, config) {
 
     router.get('/admin', (req, res) => {
         const password = req.query.password;
-        if (password !== process.env.ADMIN_PASSWORD) {
+        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
             if (password) log('WARN', `Failed admin login for '${instanceName}'`);
-            res.sendFile(path.join(__dirname, '..', '..', 'public', 'admin-login.html')); // Adjusted path
+            res.sendFile(path.join(__dirname, 'admin-login.html'));
         } else {
             log('INFO', `Successful admin login for '${instanceName}'`);
-            res.sendFile(path.join(__dirname, '..', '..', 'public', 'admin-dashboard.html')); // Adjusted path
+            res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
         }
     });
 
@@ -301,7 +766,7 @@ module.exports = function(db, instanceName, config) {
         const { password } = req.body;
         log('INFO', `Request to clear DB for '${instanceName}'`);
 
-        if (password !== process.env.ADMIN_PASSWORD) {
+        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
             log('WARN', `Failed DB clear attempt for '${instanceName}': Wrong password`);
             return res.status(401).json({ success: false, error: 'Password errata.' });
         }

@@ -1,9 +1,10 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const puppeteer = require('puppeteer');
-const log = require('../../utils/logger'); // Note the path change
-const { sendMail } = require('../../utils/mailer');
+const { generateRegistrationPDF } = require('./utils/pdfGenerator');
+const log = require('./utils/logger'); // Note the path change
+const { createMailer } = require('./utils/mailer');
+const { loadInstanceEnvironment } = require('./utils/envLoader');
 
 // CSV parsing and lookup functions
 let csvDataCache = null;
@@ -254,41 +255,7 @@ function generateSummaryHTML(registrationData, partenzaText) {
     `;
 }
 
-// Function to generate PDF using Puppeteer
-async function generateRegistrationPDF(registrationData, partenzaText, eventName) {
-    let browser;
-    try {
-        browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        
-        const page = await browser.newPage();
-        const htmlContent = generateSummaryHTML(registrationData, partenzaText);
-        
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-        
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '20px',
-                right: '20px',
-                bottom: '20px',
-                left: '20px'
-            }
-        });
-        
-        await browser.close();
-        return pdfBuffer;
-        
-    } catch (error) {
-        if (browser) {
-            await browser.close();
-        }
-        throw error;
-    }
-}
+// PDF generation is now handled by utils/pdfGenerator.js
 
 function createTables(db, instanceName) {
     db.serialize(() => {
@@ -322,6 +289,21 @@ function createTables(db, instanceName) {
 }
 
 module.exports = function(db, instanceName, config) {
+    // Load instance-specific environment variables
+    const instancePath = __dirname;
+    const { envVars: formEnvVars, getEnvVar: getFormEnvVar } = loadInstanceEnvironment(instancePath, instanceName);
+    
+    // Create instance-specific mailer with form environment variables
+    const envConfig = {
+        SMTP_HOST: getFormEnvVar('SMTP_HOST'),
+        SMTP_PORT: getFormEnvVar('SMTP_PORT'),
+        SMTP_USER: getFormEnvVar('SMTP_USER'),
+        SMTP_PASS: getFormEnvVar('SMTP_PASS'),
+        EMAIL_FROM_NAME: getFormEnvVar('EMAIL_FROM_NAME'),
+        EMAIL_FROM_ADDRESS: getFormEnvVar('EMAIL_FROM_ADDRESS')
+    };
+    const { sendMail } = createMailer(envConfig);
+    
     // Ensure tables are created for this instance
     createTables(db, instanceName);
 
@@ -338,7 +320,7 @@ module.exports = function(db, instanceName, config) {
     router.get('/api/config', (req, res) => {
         log('DEBUG', `Request for config received for instance '${instanceName}'`);
         res.json({
-            calculationDate: process.env.CALCULATION_DATE
+            calculationDate: getFormEnvVar('CALCULATION_DATE')
         });
     });
 
@@ -643,7 +625,24 @@ module.exports = function(db, instanceName, config) {
 
         } catch (err) {
             log('ERROR', `Transaction failed for '${instanceName}', rolling back.`, { error: err.message });
-            db.run("ROLLBACK"); // Attempt to rollback
+            
+            // Properly handle rollback with error checking
+            try {
+                await new Promise((resolve, reject) => {
+                    db.run("ROLLBACK", rollbackErr => {
+                        if (rollbackErr) {
+                            log('ERROR', `Rollback failed for '${instanceName}': ${rollbackErr.message}`);
+                            reject(rollbackErr);
+                        } else {
+                            log('DEBUG', `Rollback successful for '${instanceName}'`);
+                            resolve();
+                        }
+                    });
+                });
+            } catch (rollbackError) {
+                log('ERROR', `Rollback error for '${instanceName}': ${rollbackError.message}`);
+            }
+            
             res.status(500).json({ success: false, error: 'Errore durante il salvataggio dei dati nel database.' });
         }
     });
@@ -902,12 +901,12 @@ module.exports = function(db, instanceName, config) {
 
     router.get('/admin', (req, res) => {
         const password = req.query.password;
-        if (password !== process.env.ADMIN_PASSWORD) {
+        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
             if (password) log('WARN', `Failed admin login for '${instanceName}'`);
-            res.sendFile(path.join(__dirname, '..', '..', 'public', 'admin-login.html')); // Adjusted path
+            res.sendFile(path.join(__dirname, 'admin-login.html'));
         } else {
             log('INFO', `Successful admin login for '${instanceName}'`);
-            res.sendFile(path.join(__dirname, '..', '..', 'public', 'admin-dashboard.html')); // Adjusted path
+            res.sendFile(path.join(__dirname, 'admin-dashboard.html')); // Adjusted path
         }
     });
 
@@ -915,7 +914,7 @@ module.exports = function(db, instanceName, config) {
         const { password } = req.body;
         log('INFO', `Request to clear DB for '${instanceName}'`);
 
-        if (password !== process.env.ADMIN_PASSWORD) {
+        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
             log('WARN', `Failed DB clear attempt for '${instanceName}': Wrong password`);
             return res.status(401).json({ success: false, error: 'Password errata.' });
         }
