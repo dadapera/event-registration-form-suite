@@ -698,9 +698,19 @@ module.exports = function(db, instanceName, config) {
                 const expandedRows = [];
                 
                 registrations.forEach(registration => {
+                    // Get guest details for this registration
+                    const registrationGuests = guestsByRegistration[registration.registrazione_id] || [];
+                    
+                    // Create ospiti_dettagli string for admin dashboard
+                    const ospiti_dettagli = registrationGuests.length > 0 
+                        ? registrationGuests.map(guest => `${guest.nome} ${guest.cognome}`).join(' | ')
+                        : '';
+
                     // Add capogruppo row
                     const capogruppoRow = {
                         ...registration,
+                        id: registration.registrazione_id, // Fix: Add id field for admin dashboard
+                        ospiti_dettagli: ospiti_dettagli, // Fix: Add guest details for admin dashboard
                         tipo_persona: 'Capogruppo',
                         posizione_gruppo: 1,
                         data_iscrizione: registration.data_iscrizione_ft
@@ -708,14 +718,15 @@ module.exports = function(db, instanceName, config) {
                     expandedRows.push(capogruppoRow);
 
                     // Add guest rows
-                    const registrationGuests = guestsByRegistration[registration.registrazione_id] || [];
                     registrationGuests.forEach((guest, index) => {
                         const guestRow = {
                             registrazione_id: registration.registrazione_id,
+                            id: registration.registrazione_id, // Fix: Add id field for admin dashboard
                             user_id: registration.user_id,
                             evento: registration.evento,
                             data_iscrizione_ft: registration.data_iscrizione_ft,
                             data_iscrizione: registration.data_iscrizione_ft,
+                            ospiti_dettagli: ospiti_dettagli, // Fix: Add guest details for admin dashboard
                             tipo_persona: 'Ospite',
                             posizione_gruppo: index + 2,
                             nome: guest.nome,

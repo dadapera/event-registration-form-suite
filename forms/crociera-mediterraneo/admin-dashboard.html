@@ -109,20 +109,35 @@
         return;
       }
       
-      // Calculate stats
-      const totalRegistrations = registrations.length;
-      let totalPersonsCalc = registrations.length; // Start with capogruppo count
-      
-      // Add guests count
+      // Group registrations by registration ID (capogruppo + guests)
+      const groupedRegistrations = {};
       registrations.forEach(reg => {
-        if (reg.ospiti_dettagli) {
-          // Count guests from concatenated string
-          const guestParts = reg.ospiti_dettagli.split(' | ');
-          totalPersonsCalc += guestParts.length;
+        const regId = reg.registrazione_id || reg.id;
+        if (!groupedRegistrations[regId]) {
+          groupedRegistrations[regId] = {
+            capogruppo: null,
+            guests: []
+          };
+        }
+        
+        if (reg.tipo_persona === 'Capogruppo') {
+          groupedRegistrations[regId].capogruppo = reg;
+        } else if (reg.tipo_persona === 'Ospite') {
+          groupedRegistrations[regId].guests.push(reg);
         }
       });
       
-      const totalRevenue = registrations.reduce((sum, reg) => sum + (reg.costo_totale_gruppo || 0), 0);
+      // Calculate stats using only capogruppo rows
+      const capogruppoRows = Object.values(groupedRegistrations).map(group => group.capogruppo).filter(Boolean);
+      const totalRegistrations = capogruppoRows.length;
+      let totalPersonsCalc = totalRegistrations; // Start with capogruppo count
+      
+      // Add guests count
+      Object.values(groupedRegistrations).forEach(group => {
+        totalPersonsCalc += group.guests.length;
+      });
+      
+      const totalRevenue = capogruppoRows.reduce((sum, reg) => sum + (reg.costo_totale_gruppo || 0), 0);
       
       document.getElementById('totalCount').textContent = totalRegistrations;
       document.getElementById('totalPersons').textContent = totalPersonsCalc;
@@ -130,10 +145,10 @@
       stats.classList.remove('hidden');
 
       // Calculate and display room stats
-      const totalSingle = registrations.reduce((sum, reg) => sum + (reg.camera_singola || 0), 0);
-      const totalDouble = registrations.reduce((sum, reg) => sum + (reg.camera_doppia || 0), 0);
-      const totalTriple = registrations.reduce((sum, reg) => sum + (reg.camera_tripla || 0), 0);
-      const totalQuadruple = registrations.reduce((sum, reg) => sum + (reg.camera_quadrupla || 0), 0);
+      const totalSingle = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_singola || 0), 0);
+      const totalDouble = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_doppia || 0), 0);
+      const totalTriple = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_tripla || 0), 0);
+      const totalQuadruple = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_quadrupla || 0), 0);
 
       document.getElementById('totalSingleRooms').textContent = totalSingle;
       document.getElementById('totalDoubleRooms').textContent = totalDouble;
@@ -146,10 +161,10 @@
         <table class="min-w-full bg-white border border-gray-300">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-2 py-2 border-b text-left">ID</th>
-              <th class="px-2 py-2 border-b text-left">Nome</th>
-              <th class="px-2 py-2 border-b text-left">Contatti</th>
-              <th class="px-2 py-2 border-b text-left">Dati Anagrafici</th>
+                             <th class="px-2 py-2 border-b text-left">ID</th>
+               <th class="px-2 py-2 border-b text-left">Nome</th>
+               <th class="px-2 py-2 border-b text-left">Dati Anagrafici</th>
+               <th class="px-2 py-2 border-b text-left">Contatti</th>
               <th class="px-2 py-2 border-b text-left">Partenza</th>
               <th class="px-2 py-2 border-b text-left">Camere</th>
               <th class="px-2 py-2 border-b text-left">Costo (€)</th>
@@ -161,14 +176,24 @@
           <tbody>
       `;
       
-      registrations.forEach((reg, index) => {
-        const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+      let rowIndex = 0;
+      Object.values(groupedRegistrations).forEach(group => {
+        if (!group.capogruppo) return;
         
-        table += `<tr class="${rowClass}">`;
-        table += `<td class="px-2 py-1 border-b">${reg.id}</td>`;
-        table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
-        table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
-        table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${reg.indirizzo || '-'}<br>CF: ${reg.codice_fiscale || '-'}</td>`;
+        const reg = group.capogruppo;
+        const hasGuests = group.guests.length > 0;
+        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        const clickableClass = hasGuests ? 'cursor-pointer hover:bg-blue-50' : '';
+        
+        table += `<tr class="${rowClass} ${clickableClass}" ${hasGuests ? `onclick="toggleGuestRows(${reg.id})"` : ''}>`;
+        table += `<td class="px-2 py-1 border-b">`;
+        if (hasGuests) {
+          table += `<span id="expand-icon-${reg.id}" class="mr-2">▶</span>`;
+        }
+                 table += `${reg.id}</td>`;
+         table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
+         table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${reg.indirizzo || '-'}<br>CF: ${reg.codice_fiscale || '-'}</td>`;
+         table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
         table += `<td class="px-2 py-1 border-b">${reg.partenza || '-'}</td>`;
         
         // Room info
@@ -185,9 +210,13 @@
           : '-';
         table += `<td class="px-2 py-1 border-b">${costText}</td>`;
         
-        // Guests info
-        const guestsText = reg.ospiti_dettagli || '-';
-        table += `<td class="px-2 py-1 border-b max-w-xs truncate" title="${guestsText}">${guestsText}</td>`;
+        // Guests info - show only for capogruppo
+        if (hasGuests) {
+          const guestNames = group.guests.map(guest => `${guest.nome} ${guest.cognome}`).join(', ');
+          table += `<td class="px-2 py-1 border-b" title="${guestNames}">${group.guests.length}</td>`;
+        } else {
+          table += `<td class="px-2 py-1 border-b">-</td>`;
+        }
         
         // Billing info
         table += '<td class="px-2 py-1 border-b">';
@@ -204,10 +233,43 @@
           : '-';
         table += `<td class="px-2 py-1 border-b">${dateText}</td>`;
         table += '</tr>';
+        
+        // Add guest rows (initially hidden)
+        group.guests.forEach((guest, guestIndex) => {
+          table += `<tr class="guest-row guest-${reg.id} bg-blue-25 hidden">`;
+                     table += `<td class="px-2 py-1 border-b pl-8 text-sm text-gray-600">Ospite ${guestIndex + 1}</td>`;
+           table += `<td class="px-2 py-1 border-b font-medium text-sm">${guest.nome} ${guest.cognome}</td>`;
+           table += `<td class="px-2 py-1 border-b text-sm">Nato: ${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${guest.indirizzo || '-'}<br>CF: ${guest.codice_fiscale || '-'}</td>`;
+           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += '</tr>';
+        });
+        
+        rowIndex++;
       });
       
       table += '</tbody></table>';
       container.innerHTML = table;
+    }
+
+    function toggleGuestRows(registrationId) {
+      const guestRows = document.querySelectorAll(`.guest-${registrationId}`);
+      const expandIcon = document.getElementById(`expand-icon-${registrationId}`);
+      
+      guestRows.forEach(row => {
+        if (row.classList.contains('hidden')) {
+          row.classList.remove('hidden');
+          expandIcon.textContent = '▼';
+        } else {
+          row.classList.add('hidden');
+          expandIcon.textContent = '▶';
+        }
+      });
     }
     
     async function exportCSV() {
