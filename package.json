@@ -9,6 +9,7 @@
     "stop": "docker-compose -f docker-compose.microservices.yml down",
     "prune": "docker system prune -f",
     "build": "docker-compose -f docker-compose.microservices.yml build",
+    "sbr": "docker-compose -f docker-compose.microservices.yml down && docker-compose -f docker-compose.microservices.yml build && docker-compose -f docker-compose.microservices.yml up -d",
     "logs": "docker-compose -f docker-compose.microservices.yml logs -f",
     "deploy": "./deploy-microservices.sh",
     "deploy:win": "./deploy-microservices.bat"
