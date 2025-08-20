@@ -465,70 +465,6 @@
                 // NEW: Show modal on success
                 lastSubmissionId = result.id;
                 lastEventName = payload.evento;
-                const modalSummary = document.getElementById('modalSummary');
-                const partenzaSelect = document.getElementById('partenza');
-                const partenzaText = partenzaSelect.options[partenzaSelect.selectedIndex].text;
-                const summaryHtml = `
-                    <h4 class="font-semibold text-lg text-center">Riepilogo Iscrizione (ID: ${result.id})</h4>
-                    
-                    <div class="mt-4">
-                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dettagli Evento</h5>
-                        <p><strong>Evento:</strong> ${payload.evento}</p>
-                        <p><strong>Aeroporto di Partenza:</strong> ${partenzaText}</p>
-                    </div>
-
-                    <div class="mt-4">
-                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dati Capogruppo</h5>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                            <p><strong>Nome:</strong> ${payload.nome}</p>
-                            <p><strong>Cognome:</strong> ${payload.cognome}</p>
-                            <p><strong>Data di Nascita:</strong> ${new Date(payload.data_nascita).toLocaleDateString('it-IT')}</p>
-                            <p><strong>Codice Fiscale:</strong> ${payload.codice_fiscale}</p>
-                            <p><strong>Email:</strong> ${payload.email}</p>
-                            <p><strong>Cellulare:</strong> ${payload.cellulare}</p>
-                        </div>
-                        <p class="mt-2"><strong>Indirizzo:</strong> ${payload.indirizzo}</p>
-                    </div>
-
-                    ${payload.ospiti && payload.ospiti.length > 0 ? `
-                    <div class="mt-4">
-                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Accompagnatori</h5>
-                        ${payload.ospiti.map((o, index) => `
-                            <div class="mt-2 p-2 border rounded-md">
-                                <p class="font-semibold">Ospite ${index + 1}</p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                                    <p><strong>Nome:</strong> ${o.nome}</p>
-                                    <p><strong>Cognome:</strong> ${o.cognome}</p>
-                                    <p><strong>Data di Nascita:</strong> ${o.data_nascita ? new Date(o.data_nascita).toLocaleDateString('it-IT') : 'N/D'}</p>
-                                    <p><strong>Codice Fiscale:</strong> ${o.codice_fiscale || 'N/D'}</p>
-                                </div>
-                                <p class="mt-2"><strong>Indirizzo:</strong> ${o.indirizzo || 'Non specificato'}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                    ` : ''}
-
-                    ${payload.fatturazione_aziendale ? `
-                    <div class="mt-4">
-                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Dati Fatturazione Aziendale</h5>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                            <p class="col-span-2"><strong>Ragione Sociale:</strong> ${payload.dati_fatturazione.ragione_sociale}</p>
-                            <p><strong>Partita IVA:</strong> ${payload.dati_fatturazione.partita_iva}</p>
-                            <p><strong>Codice Fiscale Azienda:</strong> ${payload.dati_fatturazione.codice_fiscale_azienda || 'N/D'}</p>
-                            <p><strong>Codice SDI:</strong> ${payload.dati_fatturazione.codice_sdi || 'N/D'}</p>
-                            <p><strong>PEC:</strong> ${payload.dati_fatturazione.pec_azienda || 'N/D'}</p>
-                        </div>
-                        <p class="mt-2"><strong>Sede Legale:</strong> ${payload.dati_fatturazione.indirizzo_sede_legale}</p>
-                    </div>
-                    ` : ''}
-
-                    <div class="mt-4">
-                        <h5 class="font-semibold text-blue-700 border-b pb-1 mb-2">Riepilogo Camere e Costi</h5>
-                        <p><strong>Composizione Camere:</strong> ${Object.entries(payload).filter(([key, value]) => key.startsWith('camera_') && value > 0).map(([key, value]) => `${value} ${key.replace(/_/g, ' ')}`).join(', ') || 'N/D'}</p>
-                        <p class="text-lg font-bold mt-2"><strong>Costo Totale:</strong> €${payload.costo_totale_gruppo.toFixed(2)}</p>
-                    </div>
-                `;
-                modalSummary.innerHTML = summaryHtml;
                 document.getElementById('successModal').classList.remove('hidden');
 
                 // NEW: Add email to success message
@@ -1235,9 +1171,6 @@
           </svg>
         </div>
         <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Iscrizione Completata con Successo!</h3>
-        <div id="modalSummary" class="mt-4 px-7 py-3 text-left">
-          <!-- Summary will be injected here -->
-        </div>
         <div class="items-center px-4 py-3">
           <p id="success-mail-message" class="text-sm text-gray-500 mb-4">Riceverai a breve una mail di riepilogo. Controlla anche la cartella spam.</p>
           <button id="downloadPdfButton" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">Scarica Riepilogo PDF</button>

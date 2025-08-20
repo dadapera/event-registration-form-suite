@@ -336,8 +336,7 @@ async function generateRegistrationPDF(registrationData, partenzaText, eventName
             doc.fontSize(10)
                .font('Helvetica')
                .fillColor('#6b7280')
-               .text('Documento generato automaticamente', { align: 'center' })
-               .text(`Data: ${new Date().toLocaleDateString('it-IT')}`, { align: 'center' });
+               .text(`Documento generato automaticamente in data: ${new Date().toLocaleDateString('it-IT')}`, { align: 'center' });
 
             // Finalize the PDF
             doc.end();

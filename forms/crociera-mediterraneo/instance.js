@@ -309,6 +309,9 @@ module.exports = function(db, instanceName, config) {
 
     const router = express.Router();
 
+    // Serve static assets (images, CSS, JS) from the instance's assets directory
+    router.use('/assets', express.static(path.join(__dirname, 'assets')));
+
     // The root of this router is already namespaced with the instance name
     // So, a GET on '/' here corresponds to a GET on '/{instanceName}/'
     router.get('/', (req, res) => {
