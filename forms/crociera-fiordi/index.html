@@ -331,33 +331,72 @@
     });
     
     async function downloadSummaryPDF() {
-        const { jsPDF } = window.jspdf;
-        const summaryElement = document.getElementById('modalSummary');
-        
-        summaryElement.style.backgroundColor = '#ffffff';
-        summaryElement.style.padding = '20px';
+        try {
+            if (!lastSubmissionId) {
+                alert('Errore: ID registrazione non trovato.');
+                return;
+            }
 
-        const canvas = await html2canvas(summaryElement, { 
-          scale: 2,
-          useCORS: true 
-        });
+            console.log(`Requesting PDF generation for registration ID: ${lastSubmissionId}`);
+            
+            // Show loading state
+            const downloadButton = document.getElementById('downloadPdfButton');
+            const originalText = downloadButton.textContent;
+            downloadButton.textContent = 'Generazione PDF...';
+            downloadButton.disabled = true;
 
-        summaryElement.style.backgroundColor = '';
-        summaryElement.style.padding = '';
+            const response = await fetch(`/${instanceName}/api/generate-pdf/${lastSubmissionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4'
-        });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Errore nella generazione del PDF');
+            }
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        const safeEventName = lastEventName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-        pdf.save(`riepilogo-iscrizione-${safeEventName}.pdf`);
+            // Get the PDF blob
+            const blob = await response.blob();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            // Extract filename from response headers or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'riepilogo-iscrizione.pdf';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Reset button state
+            downloadButton.textContent = originalText;
+            downloadButton.disabled = false;
+            
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Errore nella generazione del PDF: ' + error.message);
+            
+            // Reset button state on error
+            const downloadButton = document.getElementById('downloadPdfButton');
+            downloadButton.textContent = 'Scarica Riepilogo PDF';
+            downloadButton.disabled = false;
+        }
     }
 
     // --- Event Handlers ---
@@ -1183,8 +1222,7 @@
      }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   
   
   <!-- Success Modal -->
