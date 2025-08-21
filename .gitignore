@@ -4,9 +4,8 @@
 # Environment Variables
 .env
 
-# SQLite Database
-database.sqlite
-database.sqlite-journal
+# Database files (removed SQLite, using PostgreSQL)
+# PostgreSQL connection info should be in environment variables
 
 # Logs
 npm-debug.log*

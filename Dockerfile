@@ -33,8 +33,8 @@ COPY . .
 # Create forms directory if it doesn't exist
 RUN mkdir -p forms
 
-# Create directory for SQLite databases with proper permissions
-RUN mkdir -p data && chown -R node:node /app
+# Set proper permissions for the application directory
+RUN chown -R node:node /app
 
 # Switch to non-root user for security
 USER node

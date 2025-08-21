@@ -7,7 +7,7 @@ echo Event Form Suite - Microservices Deploy
 echo =====================================
 
 echo.
-echo [1/5] Checking prerequisites...
+echo [1/6] Checking prerequisites...
 
 REM Check if Docker is running
 docker info >nul 2>&1
@@ -31,19 +31,52 @@ echo Docker is running ✓
 echo Docker Compose is available ✓
 
 echo.
-echo [2/5] Stopping existing containers...
+echo [2/6] Setting up PostgreSQL environment...
+
+REM Check if .env file exists, if not create from template
+if not exist ".env" (
+    echo Creating .env file from template...
+    if exist "config\production.env.template" (
+        copy "config\production.env.template" ".env" >nul
+        echo ✓ .env file created from template
+        echo ⚠️  Please review and update .env file with your actual SMTP settings
+    ) else (
+        echo ⚠️  Template file not found. Creating basic .env...
+        (
+            echo DATABASE_URL=postgresql://event_form_db_9l7w_user:Rce3dgqN8ODeNS9ej7J4BVboQjuMuhnv@dpg-d2ji79re5dus73954560-a/event_form_db_9l7w
+            echo NODE_ENV=production
+            echo ADMIN_PASSWORD=admin123
+            echo CALCULATION_DATE=2025-07-12
+        ) > .env
+        echo ✓ Basic .env file created
+    )
+) else (
+    echo ✓ .env file already exists
+)
+
+REM Verify DATABASE_URL is set
+findstr /B "DATABASE_URL=" .env >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo ⚠️  Adding DATABASE_URL to .env file...
+    echo DATABASE_URL=postgresql://event_form_db_9l7w_user:Rce3dgqN8ODeNS9ej7J4BVboQjuMuhnv@dpg-d2ji79re5dus73954560-a/event_form_db_9l7w >> .env
+) else (
+    echo ✓ DATABASE_URL configured
+)
+
+echo.
+echo [3/6] Stopping existing containers...
 docker-compose -f docker-compose.microservices.yml down
 
 echo.
-echo [3/5] Building microservice images...
+echo [4/6] Building microservice images...
 docker-compose -f docker-compose.microservices.yml build --no-cache
 
 echo.
-echo [4/5] Starting microservices...
+echo [5/6] Starting microservices...
 docker-compose -f docker-compose.microservices.yml up -d
 
 echo.
-echo [5/5] Checking service health...
+echo [6/6] Checking service health...
 timeout /t 10 /nobreak >nul
 
 REM Check individual service health

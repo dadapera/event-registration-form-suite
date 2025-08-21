@@ -25,8 +25,12 @@ services:
       - NODE_ENV=production
       - INSTANCE_NAME=crociera-fiordi
       - SERVICE_PORT=3001
-    volumes:
-      - ./services/crociera-fiordi/data:/app/data
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-event_forms}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
     restart: unless-stopped
     networks:
       - event-form-network
@@ -46,8 +50,12 @@ services:
       - NODE_ENV=production
       - INSTANCE_NAME=crociera-mediterraneo
       - SERVICE_PORT=3002
-    volumes:
-      - ./services/crociera-mediterraneo/data:/app/data
+      - DATABASE_URL=${DATABASE_URL}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-event_forms}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
     restart: unless-stopped
     networks:
       - event-form-network
@@ -63,6 +71,4 @@ networks:
   event-form-network:
     driver: bridge
 
-volumes:
-  crociera-fiordi-data:
-  crociera-mediterraneo-data: 
+# Volumes removed - PostgreSQL database is external 

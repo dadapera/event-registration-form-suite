@@ -124,48 +124,136 @@ Dashboard amministratore con autenticazione (password: 123456).
 
 ## Database
 
-Il sistema utilizza SQLite con la seguente struttura relazionale:
+Il sistema utilizza PostgreSQL come database per garantire migliori prestazioni con accesso concorrente. 
+
+### Configurazione PostgreSQL
+
+#### Variabili di Ambiente Richieste
+
+Per la connessione al database PostgreSQL, configurare le seguenti variabili di ambiente:
+
+```bash
+# Render PostgreSQL Connection (raccomandato)
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# O configurazione alternativa
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=event_forms
+DB_USER=postgres
+DB_PASSWORD=your_password
+```
+
+#### Setup su Render
+
+1. Crea un nuovo database PostgreSQL su Render
+2. Copia l'URL di connessione interno dal dashboard
+3. Aggiungi `DATABASE_URL` come variabile di ambiente al tuo web service
+4. Il sistema creerà automaticamente le tabelle al primo avvio
+
+#### Test della Connessione Database
+
+Prima di effettuare il deploy, testa la connessione al database:
+
+```bash
+# Installa le dipendenze
+npm install
+
+# Testa la connessione database
+npm run test-db
+```
+
+#### Deploy Locale con Docker
+
+```bash
+# Linux/macOS
+./deploy-microservices.sh
+
+# Windows
+./deploy-microservices.bat
+```
+
+Gli script di deploy automaticamente:
+- Verificano che Docker sia in esecuzione
+- Creano il file .env con le variabili di ambiente necessarie
+- Costruiscono e avviano i servizi Docker
+- Testano la salute dei servizi
+
+#### Esempio File .env
+
+```bash
+# PostgreSQL Database Configuration
+DATABASE_URL=postgresql://username:password@host:port/database_name
+
+# Application Settings
+NODE_ENV=production
+SERVICE_PORT=3000
+
+# Email Configuration (per instance)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_email_password
+EMAIL_FROM_NAME=Event Registration
+EMAIL_FROM_ADDRESS=noreply@example.com
+
+# Admin Settings
+ADMIN_PASSWORD=your_admin_password
+
+# Event Configuration
+CALCULATION_DATE=2025-07-12
+```
+
+### Struttura Database
 
 ### Tabella `registrazioni` (Capigruppo)
 ```sql
 CREATE TABLE registrazioni (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    evento TEXT NOT NULL,
-    nome TEXT NOT NULL,
-    cognome TEXT NOT NULL,
-    email TEXT NOT NULL,
-    cellulare TEXT NOT NULL,
-    data_nascita TEXT NOT NULL,
-    codice_fiscale TEXT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) UNIQUE,
+    evento VARCHAR(255) NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    cognome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    cellulare VARCHAR(255) NOT NULL,
+    data_nascita DATE NOT NULL,
+    codice_fiscale VARCHAR(255) NOT NULL,
     indirizzo TEXT NOT NULL,
-    partenza TEXT NOT NULL,
+    partenza VARCHAR(255) NOT NULL,
     camera_singola INTEGER DEFAULT 0,
     camera_doppia INTEGER DEFAULT 0,
     camera_tripla INTEGER DEFAULT 0,
     camera_quadrupla INTEGER DEFAULT 0,
-    costo_totale_gruppo REAL NOT NULL,
-    fatturazione_aziendale BOOLEAN DEFAULT 0,
-    ragione_sociale TEXT,
-    partita_iva TEXT,
-    codice_fiscale_azienda TEXT,
-    indirizzo_sede_legale TEXT,
-    codice_sdi TEXT,
-    pec_azienda TEXT,
-    data_iscrizione DATETIME DEFAULT CURRENT_TIMESTAMP
+    costo_totale_gruppo DECIMAL(10,2) NOT NULL,
+    fatturazione_aziendale BOOLEAN DEFAULT false,
+    data_iscrizione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-### Tabella `ospiti`
+### Tabella `accompagnatori_dettagli`
 ```sql
-CREATE TABLE ospiti (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registrazione_id INTEGER NOT NULL,
-    nome TEXT NOT NULL,
-    cognome TEXT NOT NULL,
-    data_nascita TEXT NOT NULL,
-    codice_fiscale TEXT NOT NULL,
-    indirizzo TEXT NOT NULL,
-    FOREIGN KEY (registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
+CREATE TABLE accompagnatori_dettagli (
+    id SERIAL PRIMARY KEY,
+    registrazione_id INTEGER REFERENCES registrazioni(id) ON DELETE CASCADE,
+    nome VARCHAR(255) NOT NULL,
+    cognome VARCHAR(255) NOT NULL,
+    data_nascita DATE NOT NULL,
+    codice_fiscale VARCHAR(255) NOT NULL,
+    indirizzo TEXT NOT NULL
+);
+```
+
+### Tabella `dati_fatturazione`
+```sql
+CREATE TABLE dati_fatturazione (
+    id SERIAL PRIMARY KEY,
+    registrazione_id INTEGER REFERENCES registrazioni(id) ON DELETE CASCADE,
+    ragione_sociale VARCHAR(255),
+    partita_iva VARCHAR(255),
+    codice_fiscale_azienda VARCHAR(255),
+    indirizzo_sede_legale TEXT,
+    codice_sdi VARCHAR(255),
+    pec_azienda VARCHAR(255)
 );
 ```
 

@@ -257,35 +257,55 @@ function generateSummaryHTML(registrationData, partenzaText) {
 
 // PDF generation is now handled by utils/pdfGenerator.js
 
-function createTables(db, instanceName) {
-    db.serialize(() => {
-        db.run(`CREATE TABLE IF NOT EXISTS registrazioni (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT UNIQUE,
-      nome TEXT, cognome TEXT, email TEXT, cellulare TEXT, data_nascita TEXT,
-      indirizzo TEXT, codice_fiscale TEXT, partenza TEXT,
-      camera_singola INTEGER DEFAULT 0, camera_doppia INTEGER DEFAULT 0,
-      camera_tripla INTEGER DEFAULT 0, camera_quadrupla INTEGER DEFAULT 0,
-      costo_totale_gruppo REAL, evento TEXT, data_iscrizione TEXT,
-      fatturazione_aziendale BOOLEAN DEFAULT 0
-    )`);
+async function createTables(db, instanceName) {
+    try {
+        await db.run(`CREATE TABLE IF NOT EXISTS registrazioni (
+            id SERIAL PRIMARY KEY,
+            user_id VARCHAR(255) UNIQUE,
+            nome VARCHAR(255), 
+            cognome VARCHAR(255), 
+            email VARCHAR(255), 
+            cellulare VARCHAR(255), 
+            data_nascita DATE,
+            indirizzo TEXT, 
+            codice_fiscale VARCHAR(255), 
+            partenza VARCHAR(255),
+            camera_singola INTEGER DEFAULT 0, 
+            camera_doppia INTEGER DEFAULT 0,
+            camera_tripla INTEGER DEFAULT 0, 
+            camera_quadrupla INTEGER DEFAULT 0,
+            costo_totale_gruppo DECIMAL(10,2), 
+            evento VARCHAR(255), 
+            data_iscrizione TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fatturazione_aziendale BOOLEAN DEFAULT false
+        )`);
 
-        db.run(`CREATE TABLE IF NOT EXISTS accompagnatori_dettagli (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      registrazione_id INTEGER, nome TEXT, cognome TEXT, data_nascita TEXT,
-      indirizzo TEXT, codice_fiscale TEXT,
-      FOREIGN KEY(registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
-    )`);
+        await db.run(`CREATE TABLE IF NOT EXISTS accompagnatori_dettagli (
+            id SERIAL PRIMARY KEY,
+            registrazione_id INTEGER REFERENCES registrazioni(id) ON DELETE CASCADE, 
+            nome VARCHAR(255), 
+            cognome VARCHAR(255), 
+            data_nascita DATE,
+            indirizzo TEXT, 
+            codice_fiscale VARCHAR(255)
+        )`);
 
-        db.run(`CREATE TABLE IF NOT EXISTS dati_fatturazione (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      registrazione_id INTEGER, ragione_sociale TEXT, partita_iva TEXT,
-      codice_fiscale_azienda TEXT, indirizzo_sede_legale TEXT,
-      codice_sdi TEXT, pec_azienda TEXT,
-      FOREIGN KEY(registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
-    )`);
+        await db.run(`CREATE TABLE IF NOT EXISTS dati_fatturazione (
+            id SERIAL PRIMARY KEY,
+            registrazione_id INTEGER REFERENCES registrazioni(id) ON DELETE CASCADE, 
+            ragione_sociale VARCHAR(255), 
+            partita_iva VARCHAR(255),
+            codice_fiscale_azienda VARCHAR(255), 
+            indirizzo_sede_legale TEXT,
+            codice_sdi VARCHAR(255), 
+            pec_azienda VARCHAR(255)
+        )`);
+        
         log('SYSTEM', `Database tables ready for instance '${instanceName}'.`);
-    });
+    } catch (error) {
+        log('ERROR', `Failed to create tables for instance '${instanceName}': ${error.message}`);
+        throw error;
+    }
 }
 
 module.exports = function(db, instanceName, config) {
@@ -305,7 +325,9 @@ module.exports = function(db, instanceName, config) {
     const { sendMail } = createMailer(envConfig);
     
     // Ensure tables are created for this instance
-    createTables(db, instanceName);
+    createTables(db, instanceName).catch(err => {
+        log('ERROR', `Failed to create tables for ${instanceName}: ${err.message}`);
+    });
 
     const router = express.Router();
 
@@ -452,18 +474,17 @@ module.exports = function(db, instanceName, config) {
         }
     });
 
-    router.get('/api/check-user/:userId', (req, res) => {
+    router.get('/api/check-user/:userId', async (req, res) => {
         const userId = req.params.userId;
         log('DEBUG', `Checking if user ID ${userId} already exists for instance '${instanceName}'`);
         
-        db.get("SELECT id FROM registrazioni WHERE user_id = ?", [userId], (err, row) => {
-            if (err) {
-                log('ERROR', `Database error checking user ID for '${instanceName}'`, { error: err.message });
-                return res.status(500).json({ error: 'Errore del database' });
-            }
-            
+        try {
+            const row = await db.get("SELECT id FROM registrazioni WHERE user_id = $1", [userId]);
             res.json({ exists: !!row });
-        });
+        } catch (error) {
+            log('ERROR', `Database error checking user ID for '${instanceName}'`, { error: error.message });
+            res.status(500).json({ error: 'Errore del database' });
+        }
     });
 
     router.post('/api/registrati', async (req, res) => {
@@ -485,12 +506,7 @@ module.exports = function(db, instanceName, config) {
         }
 
         // Check if user_id already exists
-        const existingUser = await new Promise((resolve, reject) => {
-            db.get("SELECT id FROM registrazioni WHERE user_id = ?", [user_id], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
+        const existingUser = await db.get("SELECT id FROM registrazioni WHERE user_id = $1", [user_id]);
 
         if (existingUser) {
             log('WARN', `Duplicate registration attempt for user_id ${user_id} in '${instanceName}'`);
@@ -502,75 +518,55 @@ module.exports = function(db, instanceName, config) {
         }
 
         try {
-            await new Promise((resolve, reject) => {
-                db.run("BEGIN TRANSACTION", err => {
-                    if (err) reject(err);
-                    else resolve();
-                });
-            });
+            const registrazioneId = await db.transaction(async (client) => {
+                const mainInsertQuery = `
+                    INSERT INTO registrazioni (
+                        user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
+                        partenza, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
+                        costo_totale_gruppo, evento, fatturazione_aziendale,
+                        data_iscrizione
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                    RETURNING id
+                `;
 
-            const mainInsertStmt = db.prepare(`
-                INSERT INTO registrazioni (
-                    user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
-                    partenza, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
-                    costo_totale_gruppo, evento, fatturazione_aziendale,
-                    data_iscrizione
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-
-            const registrazioneId = await new Promise((resolve, reject) => {
-                mainInsertStmt.run(
+                const result = await client.query(mainInsertQuery, [
                     user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
                     partenza, camera_singola || 0, camera_doppia || 0, camera_tripla || 0, camera_quadrupla || 0,
                     costo_totale_gruppo, evento, fatturazione_aziendale,
-                    data_iscrizione_iso,
-                    function(err) {
-                        if (err) reject(err);
-                        else resolve(this.lastID);
+                    data_iscrizione_iso
+                ]);
+                
+                const registrazioneId = result.rows[0].id;
+
+                if (ospiti && ospiti.length > 0) {
+                    const ospiteQuery = `
+                        INSERT INTO accompagnatori_dettagli (
+                            registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale
+                        ) VALUES ($1, $2, $3, $4, $5, $6)
+                    `;
+                    for (const ospite of ospiti) {
+                        await client.query(ospiteQuery, [
+                            registrazioneId, ospite.nome, ospite.cognome, 
+                            ospite.data_nascita, ospite.indirizzo, ospite.codice_fiscale
+                        ]);
                     }
-                );
-            });
-            mainInsertStmt.finalize();
-
-            if (ospiti && ospiti.length > 0) {
-                const ospiteStmt = db.prepare(`
-                    INSERT INTO accompagnatori_dettagli (
-                        registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                `);
-                for (const ospite of ospiti) {
-                    await new Promise((resolve, reject) => {
-                        ospiteStmt.run(registrazioneId, ospite.nome, ospite.cognome, ospite.data_nascita, ospite.indirizzo, ospite.codice_fiscale, err => {
-                            if (err) reject(err);
-                            else resolve();
-                        });
-                    });
                 }
-                ospiteStmt.finalize();
-            }
 
-            if (fatturazione_aziendale && dati_fatturazione) {
-                await new Promise((resolve, reject) => {
-                    db.run(`INSERT INTO dati_fatturazione (
-                        registrazione_id, ragione_sociale, partita_iva, codice_fiscale_azienda,
-                        indirizzo_sede_legale, codice_sdi, pec_azienda
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                        [registrazioneId, dati_fatturazione.ragione_sociale, dati_fatturazione.partita_iva,
+                if (fatturazione_aziendale && dati_fatturazione) {
+                    const fatturazionQuery = `
+                        INSERT INTO dati_fatturazione (
+                            registrazione_id, ragione_sociale, partita_iva, codice_fiscale_azienda,
+                            indirizzo_sede_legale, codice_sdi, pec_azienda
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    `;
+                    await client.query(fatturazionQuery, [
+                        registrazioneId, dati_fatturazione.ragione_sociale, dati_fatturazione.partita_iva,
                         dati_fatturazione.codice_fiscale_azienda, dati_fatturazione.indirizzo_sede_legale,
-                        dati_fatturazione.codice_sdi, dati_fatturazione.pec_azienda],
-                        err => {
-                            if (err) reject(err);
-                            else resolve();
-                        }
-                    );
-                });
-            }
+                        dati_fatturazione.codice_sdi, dati_fatturazione.pec_azienda
+                    ]);
+                }
 
-            await new Promise((resolve, reject) => {
-                db.run("COMMIT", err => {
-                    if (err) reject(err);
-                    else resolve();
-                });
+                return registrazioneId;
             });
 
             log('INFO', `Transaction committed for '${instanceName}'`, { registrationId: registrazioneId });
