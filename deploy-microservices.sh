@@ -10,7 +10,7 @@ echo "Event Form Suite - Microservices Deploy"
 echo "====================================="
 
 echo
-echo "[1/6] Checking prerequisites..."
+echo "[1/5] Checking prerequisites..."
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
@@ -30,51 +30,19 @@ echo "Docker is running ✓"
 echo "Docker Compose is available ✓"
 
 echo
-echo "[2/6] Setting up PostgreSQL environment..."
-
-# Check if .env file exists, if not create from template
-if [ ! -f ".env" ]; then
-    echo "Creating .env file from template..."
-    if [ -f "config/production.env.template" ]; then
-        cp config/production.env.template .env
-        echo "✓ .env file created from template"
-        echo "⚠️  Please review and update .env file with your actual SMTP settings"
-    else
-        echo "⚠️  Template file not found. Creating basic .env..."
-        cat > .env << EOF
-DATABASE_URL=postgresql://event_form_db_9l7w_user:Rce3dgqN8ODeNS9ej7J4BVboQjuMuhnv@dpg-d2ji79re5dus73954560-a/event_form_db_9l7w
-NODE_ENV=production
-ADMIN_PASSWORD=admin123
-CALCULATION_DATE=2025-07-12
-EOF
-        echo "✓ Basic .env file created"
-    fi
-else
-    echo "✓ .env file already exists"
-fi
-
-# Verify DATABASE_URL is set
-if grep -q "^DATABASE_URL=" .env; then
-    echo "✓ DATABASE_URL configured"
-else
-    echo "⚠️  Adding DATABASE_URL to .env file..."
-    echo "DATABASE_URL=postgresql://event_form_db_9l7w_user:Rce3dgqN8ODeNS9ej7J4BVboQjuMuhnv@dpg-d2ji79re5dus73954560-a/event_form_db_9l7w" >> .env
-fi
-
-echo
-echo "[3/6] Stopping existing containers..."
+echo "[2/5] Stopping existing containers..."
 docker-compose -f docker-compose.microservices.yml down
 
 echo
-echo "[4/6] Building microservice images..."
+echo "[3/5] Building microservice images..."
 docker-compose -f docker-compose.microservices.yml build --no-cache
 
 echo
-echo "[5/6] Starting microservices..."
+echo "[4/5] Starting microservices..."
 docker-compose -f docker-compose.microservices.yml up -d
 
 echo
-echo "[6/6] Checking service health..."
+echo "[5/5] Checking service health..."
 sleep 10
 
 # Function to check service health
