@@ -329,7 +329,10 @@ module.exports = function(pool, instanceName, config) {
         log('DEBUG', `Request for config received for instance '${instanceName}'`);
         res.json({
             name: config.name || instanceName,
-            calculationDate: process.env.CALCULATION_DATE
+            eventName: config.eventName || config.name || instanceName,
+            eventStartDate: config.eventStartDate,
+            eventEndDate: config.eventEndDate,
+            calculationDate: config.calculationDate
         });
     });
 
@@ -878,6 +881,11 @@ module.exports = function(pool, instanceName, config) {
                 error: 'Failed to clear data' 
             });
         }
+    });
+
+    // Success page route
+    router.get('/success', (req, res) => {
+        res.sendFile(path.join(__dirname, 'success.html'));
     });
 
     // --- Admin routes for the instance ---
