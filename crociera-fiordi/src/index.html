@@ -131,7 +131,7 @@
         <div id="room2GuestFields" class="mt-4"></div>
         <div class="mt-4">
             <button type="button" id="addGuestRoom2Button" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded text-sm w-full md:w-auto">
-              Aggiungi Occupante (Camera 2)
+              Aggiungi Ospite (Camera 2)
             </button>
             <span id="room2MaxReachedText" class="text-sm text-red-500 hidden">Numero massimo di ospiti per questa camera raggiunto</span>
         </div>
@@ -471,8 +471,9 @@
     
     function handleFormClick(e) {
         if (e.target.matches('.remove-guest-button')) {
-            const roomType = e.target.dataset.removeRoom;
-            e.target.closest('.guest-block').remove();
+            const guestBlock = e.target.closest('.guest-block');
+            const roomType = guestBlock.dataset.removeRoom;
+            guestBlock.remove();
             if (roomType === 'room1') {
                 companionRoom1Count = document.getElementById('companionFieldsRoom1').children.length;
                 document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
@@ -532,7 +533,7 @@
         calculateTotal();
             document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
             document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
-        }
+      }
     }
 
     function handleAddressCheckbox(checkbox) {
