@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Registrazioni</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Dashboard Amministratore</h1>
+      <h2 id="instance-name" class="text-xl font-semibold text-gray-600"></h2>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Gestione Registrazioni</h2>
+      <div class="flex gap-4 mb-4">
+        <button onclick="loadRegistrations()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          Aggiorna
+        </button>
+        <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Esporta CSV
+        </button>
+      </div>
+      
+      <div class="flex flex-col lg:flex-row gap-4 mb-6">
+        <div id="stats" class="grid grid-cols-1 sm:grid-cols-3 gap-4 hidden lg:w-3/5">
+          <div class="bg-blue-50 p-4 rounded">
+            <h3 class="font-semibold">Totale Registrazioni</h3>
+            <p id="totalCount" class="text-2xl font-bold text-blue-600">0</p>
+          </div>
+          <div class="bg-green-50 p-4 rounded">
+            <h3 class="font-semibold">Totale Persone</h3>
+            <p id="totalPersons" class="text-2xl font-bold text-green-600">0</p>
+          </div>
+          <div class="bg-purple-50 p-4 rounded">
+            <h3 class="font-semibold">Ricavo Totale</h3>
+            <p id="totalRevenue" class="text-2xl font-bold text-purple-600">€0</p>
+          </div>
+        </div>
+  
+        <div id="roomStats" class="bg-gray-50 p-4 rounded hidden lg:w-2/5">
+          <h3 class="font-semibold mb-2 text-center">Riepilogo Camere</h3>
+          <div class="flex justify-around text-center">
+              <div>
+                  <p id="totalSingleRooms" class="text-2xl font-bold text-indigo-600">0</p>
+                  <p class="text-sm text-gray-600">Singole</p>
+              </div>
+              <div>
+                  <p id="totalDoubleRooms" class="text-2xl font-bold text-pink-600">0</p>
+                  <p class="text-sm text-gray-600">Doppie</p>
+              </div>
+              <div>
+                  <p id="totalTripleRooms" class="text-2xl font-bold text-red-600">0</p>
+                  <p class="text-sm text-gray-600">Triple</p>
+              </div>
+              <div>
+                  <p id="totalQuadrupleRooms" class="text-2xl font-bold text-green-600">0</p>
+                  <p class="text-sm text-gray-600">Quadruple</p>
+              </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="registrations" class="overflow-x-auto"></div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="bg-red-50 border border-red-200 rounded-lg shadow p-6 mt-8">
+      <p class="text-sm text-red-700 mb-2">Questa azione è distruttiva e non può essere annullata.</p>
+      <p class="text-xs text-gray-600 mb-4">Verrà richiesta la password di amministratore.</p>
+      <button onclick="requestDatabaseDeletion()" class="bg-red-600 text-white font-semibold px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+        Elimina Database
+      </button>
+    </div>
+  </div>
+  
+  <script>
+    // For standalone service, use root-level API endpoints
+    let instanceName = 'root';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load instance name from config
+        try {
+            const configResponse = await fetch('/api/config');
+            const config = await configResponse.json();
+            instanceName = config.name || 'root';
+        } catch (error) {
+            console.warn('Could not load config, using default name');
+        }
+        
+        document.title = `Admin Dashboard - ${instanceName}`;
+        const instanceNameEl = document.getElementById('instance-name');
+        if(instanceNameEl) instanceNameEl.textContent = `Evento: ${instanceName}`;
+        loadRegistrations();
+    });
+
+    async function loadRegistrations() {
+      try {
+        const response = await fetch(`/api/registrations`);
+        const registrations = await response.json();
+        displayRegistrations(registrations);
+      } catch (error) {
+        alert('Errore nel caricamento delle registrazioni');
+      }
+    }
+    
+    function displayRegistrations(registrations) {
+      const container = document.getElementById('registrations');
+      const stats = document.getElementById('stats');
+      const roomStats = document.getElementById('roomStats');
+      
+      if (registrations.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">Nessuna registrazione trovata</p>';
+        stats.classList.add('hidden');
+        roomStats.classList.add('hidden');
+        return;
+      }
+      
+      // Group registrations by registration ID (capogruppo + guests)
+      const groupedRegistrations = {};
+      registrations.forEach(reg => {
+        const regId = reg.registrazione_id || reg.id;
+        if (!groupedRegistrations[regId]) {
+          groupedRegistrations[regId] = {
+            capogruppo: null,
+            guests: []
+          };
+        }
+        
+        if (reg.tipo_persona === 'Capogruppo') {
+          groupedRegistrations[regId].capogruppo = reg;
+        } else if (reg.tipo_persona === 'Ospite') {
+          groupedRegistrations[regId].guests.push(reg);
+        }
+      });
+      
+      // Calculate stats using only capogruppo rows
+      const capogruppoRows = Object.values(groupedRegistrations).map(group => group.capogruppo).filter(Boolean);
+      const totalRegistrations = capogruppoRows.length;
+      let totalPersonsCalc = totalRegistrations; // Start with capogruppo count
+      
+      // Add guests count
+      Object.values(groupedRegistrations).forEach(group => {
+        totalPersonsCalc += group.guests.length;
+      });
+      
+      const totalRevenue = capogruppoRows.reduce((sum, reg) => sum + (reg.costo_totale_gruppo || 0), 0);
+      
+      document.getElementById('totalCount').textContent = totalRegistrations;
+      document.getElementById('totalPersons').textContent = totalPersonsCalc;
+      document.getElementById('totalRevenue').textContent = '€' + totalRevenue.toFixed(2);
+      stats.classList.remove('hidden');
+
+      // Calculate and display room stats
+      const totalSingle = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_singola || 0), 0);
+      const totalDouble = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_doppia || 0), 0);
+      const totalTriple = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_tripla || 0), 0);
+      const totalQuadruple = capogruppoRows.reduce((sum, reg) => sum + (reg.camera_quadrupla || 0), 0);
+
+      document.getElementById('totalSingleRooms').textContent = totalSingle;
+      document.getElementById('totalDoubleRooms').textContent = totalDouble;
+      document.getElementById('totalTripleRooms').textContent = totalTriple;
+      document.getElementById('totalQuadrupleRooms').textContent = totalQuadruple;
+      roomStats.classList.remove('hidden');
+      
+      // Create registration table
+      let table = `
+        <table class="min-w-full bg-white border border-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+                             <th class="px-2 py-2 border-b text-left">ID</th>
+               <th class="px-2 py-2 border-b text-left">Nome</th>
+               <th class="px-2 py-2 border-b text-left">Dati Anagrafici</th>
+               <th class="px-2 py-2 border-b text-left">Contatti</th>
+              <th class="px-2 py-2 border-b text-left">Partenza</th>
+              <th class="px-2 py-2 border-b text-left">Camere</th>
+              <th class="px-2 py-2 border-b text-left">Costo (€)</th>
+              <th class="px-2 py-2 border-b text-left">Accompagnatori</th>
+              <th class="px-2 py-2 border-b text-left">Fatturazione Aziendale</th>
+              <th class="px-2 py-2 border-b text-left">Data Iscrizione</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      let rowIndex = 0;
+      Object.values(groupedRegistrations).forEach(group => {
+        if (!group.capogruppo) return;
+        
+        const reg = group.capogruppo;
+        const hasGuests = group.guests.length > 0;
+        const rowClass = rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+        const clickableClass = hasGuests ? 'cursor-pointer hover:bg-blue-50' : '';
+        
+        table += `<tr class="${rowClass} ${clickableClass}" ${hasGuests ? `onclick="toggleGuestRows(${reg.id})"` : ''}>`;
+        table += `<td class="px-2 py-1 border-b">`;
+        if (hasGuests) {
+          table += `<span id="expand-icon-${reg.id}" class="mr-2">▶</span>`;
+        }
+                 table += `${reg.id}</td>`;
+         table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
+         table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${reg.indirizzo || '-'}<br>CF: ${reg.codice_fiscale || '-'}</td>`;
+         table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
+        table += `<td class="px-2 py-1 border-b">${reg.partenza || '-'}</td>`;
+        
+        // Room info
+        let roomCountsText = '';
+        if (reg.camera_singola > 0) roomCountsText += `S: ${reg.camera_singola} `; 
+        if (reg.camera_doppia > 0) roomCountsText += `D: ${reg.camera_doppia} `; 
+        if (reg.camera_tripla > 0) roomCountsText += `T: ${reg.camera_tripla} `; 
+        if (reg.camera_quadrupla > 0) roomCountsText += `Q: ${reg.camera_quadrupla} `;
+        table += `<td class="px-2 py-1 border-b">${roomCountsText.trim() || '-'}</td>`;
+
+        // Cost info
+        const costText = reg.costo_totale_gruppo 
+          ? `<span class="font-semibold">${reg.costo_totale_gruppo.toFixed(2)}</span>` 
+          : '-';
+        table += `<td class="px-2 py-1 border-b">${costText}</td>`;
+        
+        // Guests info - show only for capogruppo
+        if (hasGuests) {
+          const guestNames = group.guests.map(guest => `${guest.nome} ${guest.cognome}`).join(', ');
+          table += `<td class="px-2 py-1 border-b" title="${guestNames}">${group.guests.length}</td>`;
+        } else {
+          table += `<td class="px-2 py-1 border-b">-</td>`;
+        }
+        
+        // Billing info
+        table += '<td class="px-2 py-1 border-b">';
+        if (reg.fatturazione_aziendale) {
+          table += `Sì<br><div class="max-w-xs whitespace-pre-wrap text-xs">RS: ${reg.ragione_sociale || '-'}<br>PIVA: ${reg.partita_iva || '-'}<br>CF Az: ${reg.codice_fiscale_azienda || '-'}<br>Sede: ${reg.indirizzo_sede_legale || '-'}<br>SDI: ${reg.codice_sdi || '-'}<br>PEC: ${reg.pec_azienda || '-'}</div>`;
+        } else {
+          table += 'No';
+        }
+        table += '</td>';
+        
+        // Registration date
+        const dateText = reg.data_iscrizione 
+          ? new Date(reg.data_iscrizione).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '-';
+        table += `<td class="px-2 py-1 border-b">${dateText}</td>`;
+        table += '</tr>';
+        
+        // Add guest rows (initially hidden)
+        group.guests.forEach((guest, guestIndex) => {
+          table += `<tr class="guest-row guest-${reg.id} bg-blue-25 hidden">`;
+                     table += `<td class="px-2 py-1 border-b pl-8 text-sm text-gray-600">Ospite ${guestIndex + 1}</td>`;
+           table += `<td class="px-2 py-1 border-b font-medium text-sm">${guest.nome} ${guest.cognome}</td>`;
+           table += `<td class="px-2 py-1 border-b text-sm">Nato: ${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${guest.indirizzo || '-'}<br>CF: ${guest.codice_fiscale || '-'}</td>`;
+           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += '</tr>';
+        });
+        
+        rowIndex++;
+      });
+      
+      table += '</tbody></table>';
+      container.innerHTML = table;
+    }
+
+    function toggleGuestRows(registrationId) {
+      const guestRows = document.querySelectorAll(`.guest-${registrationId}`);
+      const expandIcon = document.getElementById(`expand-icon-${registrationId}`);
+      
+      guestRows.forEach(row => {
+        if (row.classList.contains('hidden')) {
+          row.classList.remove('hidden');
+          expandIcon.textContent = '▼';
+        } else {
+          row.classList.add('hidden');
+          expandIcon.textContent = '▶';
+        }
+      });
+    }
+    
+    async function exportCSV() {
+      try {
+        const response = await fetch(`/api/export`);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `registrazioni_${instanceName}_${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } else {
+          alert('Errore durante il download del CSV');
+        }
+      } catch (error) {
+        alert('Errore di connessione durante il download');
+      }
+    }
+
+    async function requestDatabaseDeletion() {
+      const confirm1 = confirm("Sei assolutamente sicuro di voler CANCELLARE TUTTI I DATI?\n\nTutte le registrazioni verranno eliminate permanentemente.");
+      if (!confirm1) {
+        alert("Azione annullata.");
+        return;
+      }
+
+      const password = prompt("Per confermare la cancellazione di tutti i dati, inserisci la password di amministratore:");
+      if (password === null) { // User clicked "Cancel" on the password prompt
+        alert("Azione annullata.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/delete-database`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password: password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          alert("Tutti i dati sono stati eliminati con successo. La dashboard verrà ricaricata.");
+          location.reload();
+        } else {
+          alert('Errore: ' + (result.error || 'Password errata o errore del server.'));
+        }
+      } catch (error) {
+        alert('Errore di connessione durante il tentativo di cancellazione dei dati.');
+      }
+    }
+  </script>
+</body>
+</html>

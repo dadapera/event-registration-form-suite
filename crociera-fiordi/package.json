@@ -1,0 +1,44 @@
+{
+  "name": "crociera-fiordi-service",
+  "version": "1.0.0",
+  "description": "Standalone service for Crociera sui Fiordi registration form",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "docker:build": "docker build -t crociera-fiordi .",
+    "docker:run": "docker run -d --name crociera-fiordi-container -p 3001:3000 crociera-fiordi",
+    "docker:logs": "docker logs -f crociera-fiordi-container",
+    "docker:stop": "docker stop crociera-fiordi-container && docker rm crociera-fiordi-container",
+    "docker:restart": "npm run docker:stop && npm run docker:run",
+    "docker:combo": "npm run docker:stop && npm run docker:build && npm run docker:run && npm run docker:logs"
+  },
+  "keywords": [
+    "travel",
+    "registration",
+    "cruise",
+    "fiordi",
+    "nodejs",
+    "express",
+    "postgresql"
+  ],
+  "author": "Maeviaggi Travel Agency",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "chalk": "^4.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "dotenv-flow": "^4.1.0",
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

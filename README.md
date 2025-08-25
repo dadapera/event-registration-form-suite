@@ -1,255 +1,193 @@
-# Sistema di Registrazione per Eventi di Viaggio
+# Event Form Suite - Standalone Services
 
-Un sistema completo per la gestione delle registrazioni ai viaggi organizzati con calcolo dinamico dei prezzi, tracciamento dettagliato degli accompagnatori ed esportazione CSV.
+A simplified event registration system with standalone services designed for easy deployment on Render.com and other cloud platforms.
 
-## Caratteristiche
+## 🏗️ Architecture
 
-- ✅ **Moduli di registrazione dinamici** con calcolo automatico dei prezzi
-- ✅ **Gestione accompagnatori completa** con dati individuali per ogni persona
-- ✅ **Database relazionale SQLite** per l'archiviazione persistente dei dati
-- ✅ **Calcolo prezzi in tempo reale** basato su:
-  - Numero di accompagnatori
-  - Città di partenza (con supplementi)
-  - Tipo di stanza selezionata
-- ✅ **Esportazione CSV** delle registrazioni con dettagli accompagnatori
-- ✅ **Dashboard amministratore** protetto da password per la gestione dei dati
-- ✅ **Interfaccia moderna** con Tailwind CSS
-- ✅ **API RESTful** per integrazioni future
-- ✅ **Transazioni database** per integrità dei dati
-
-## Installazione
-
-1. **Clona o scarica il progetto**
-   ```bash
-   git clone https://github.com/dadapera/event-registration-form-suite.git
-   ```
-
-2. **Installa le dipendenze**
-   ```bash
-   npm install
-   ```
-
-3. **Avvia il server**
-   ```bash
-   npm start
-   ```
-   
-   Per sviluppo con auto-reload:
-   ```bash
-   npm run dev
-   ```
-
-4. **Accedi all'applicazione**
-   - **Modulo di registrazione**: http://localhost:3000
-   - **Dashboard admin**: http://localhost:3000/admin (password: 123456)
-
-## Struttura del Progetto
+This project has been restructured and cleaned up to provide completely isolated standalone services:
 
 ```
 event-form-suite/
-├── server.js                    # Server Express con API
-├── package.json                 # Dipendenze del progetto
-├── database.sqlite              # Database SQLite (creato automaticamente)
-├── public/
-│   ├── index.html              # Modulo di registrazione principale
-│   ├── admin-login.html        # Pagina di login amministratore
-│   ├── admin-dashboard.html    # Dashboard amministratore
-│   ├── assets/                 # Cartella per loghi e immagini
-│   └── style.css               # Stili personalizzati (vuoto)
-└── README.md                   # Questa documentazione
+├── crociera-fiordi/           # Complete standalone service for Fiordi cruise
+├── crociera-mediterraneo/     # Complete standalone service for Mediterranean cruise
+├── deploy-standalone.*        # Deployment scripts for both services
+├── README.md                  # This documentation
+└── RENDER_DEPLOYMENT_GUIDE.md # Render deployment instructions
 ```
 
-## Gestione Accompagnatori
+Each service is completely self-contained with its own:
+- Node.js server
+- SQLite database
+- Dependencies
+- Dockerfile
+- Configuration
 
-### Funzionalità Accompagnatori
-- **Campi dinamici**: I campi per gli accompagnatori appaiono automaticamente in base al numero selezionato
-- **Dati completi**: Nome, cognome, data di nascita e luogo di nascita per ogni accompagnatore
-- **Validazione avanzata**:
-  - **Codice Fiscale e Provincia**: Convertiti automaticamente in maiuscolo.
-  - **Provincia**: Selezionabile da un menu a tendina con ricerca per nome completo e invio della sigla.
-  - **CAP**: Limitato a 5 cifre numeriche.
-  - Tutti i campi degli accompagnatori sono obbligatori, a meno che non si scelga di usare l'indirizzo del capogruppo.
+## 🚀 Quick Start
 
-## API Endpoints
+### Option 1: Run Individual Services Locally
 
-### POST `/api/registrati`
-Salva una nuova registrazione con ospiti e dettagli di fatturazione nel database.
-
-**Body (JSON):**
-```json
-{
-  "nome": "Mario",
-  "cognome": "Rossi",
-  "email": "mario@email.com",
-  "cellulare": "3331234567",
-  "data_nascita": "1980-01-01",
-  "indirizzo": "Via Roma 1, 20100 Milano, MI",
-  "codice_fiscale": "RSSMRA80A01H501X",
-  "partenza": "mpx",
-  "evento": "Crociera sui Fiordi 2025",
-  "camera_singola": 0,
-  "camera_doppia": 1,
-  "camera_tripla": 0,
-  "camera_quadrupla": 0,
-  "costo_totale_gruppo": 1500.50,
-  "ospiti": [
-    {
-      "nome": "Laura",
-      "cognome": "Bianchi",
-      "data_nascita": "1982-05-10",
-      "codice_fiscale": "BNCLRA82E50H501A",
-      "indirizzo": "Via Roma 1, 20100 Milano, MI"
-    }
-  ],
-  "fatturazione_aziendale": true,
-  "dati_fatturazione": {
-    "ragione_sociale": "Azienda SRL",
-    "partita_iva": "12345678901",
-    "codice_fiscale_azienda": "12345678901",
-    "indirizzo_sede_legale": "Via Garibaldi 10, 20121 Milano, MI",
-    "codice_sdi": "SUBM70N",
-    "pec_azienda": "azienda@pec.it"
-  }
-}
+**Crociera sui Fiordi:**
+```bash
+cd crociera-fiordi
+npm install
+npm start
+# Service available at http://localhost:3000
 ```
 
-### GET `/api/export`
-Esporta tutte le registrazioni con ospiti in formato CSV.
-
-### GET `/api/registrations`
-Restituisce tutte le registrazioni con ospiti in formato JSON (per dashboard admin).
-
-### GET `/admin`
-Dashboard amministratore con autenticazione (password: 123456).
-
-## Database
-
-Il sistema utilizza SQLite con la seguente struttura relazionale:
-
-### Tabella `registrazioni` (Capigruppo)
-```sql
-CREATE TABLE registrazioni (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    evento TEXT NOT NULL,
-    nome TEXT NOT NULL,
-    cognome TEXT NOT NULL,
-    email TEXT NOT NULL,
-    cellulare TEXT NOT NULL,
-    data_nascita TEXT NOT NULL,
-    codice_fiscale TEXT NOT NULL,
-    indirizzo TEXT NOT NULL,
-    partenza TEXT NOT NULL,
-    camera_singola INTEGER DEFAULT 0,
-    camera_doppia INTEGER DEFAULT 0,
-    camera_tripla INTEGER DEFAULT 0,
-    camera_quadrupla INTEGER DEFAULT 0,
-    costo_totale_gruppo REAL NOT NULL,
-    fatturazione_aziendale BOOLEAN DEFAULT 0,
-    ragione_sociale TEXT,
-    partita_iva TEXT,
-    codice_fiscale_azienda TEXT,
-    indirizzo_sede_legale TEXT,
-    codice_sdi TEXT,
-    pec_azienda TEXT,
-    data_iscrizione DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+**Crociera nel Mediterraneo:**
+```bash
+cd crociera-mediterraneo
+npm install
+npm start
+# Service available at http://localhost:3000
 ```
 
-### Tabella `ospiti`
-```sql
-CREATE TABLE ospiti (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registrazione_id INTEGER NOT NULL,
-    nome TEXT NOT NULL,
-    cognome TEXT NOT NULL,
-    data_nascita TEXT NOT NULL,
-    codice_fiscale TEXT NOT NULL,
-    indirizzo TEXT NOT NULL,
-    FOREIGN KEY (registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
-);
+### Option 2: Install All Dependencies at Once
+
+```bash
+npm run install:all
 ```
 
-## Configurazione Prezzi
+### Option 3: Docker
 
-I prezzi sono configurati dinamicamente nello script del file `public/index.html` all'interno dell'oggetto `prices`. La logica di calcolo è gestita dalla funzione `calculateTotal()`.
+Each service can be built and run independently:
 
-### Logica di Calcolo
-- **Camera 1 (del Capogruppo)**: I primi due occupanti (capogruppo + 1° ospite) sono gratuiti.
-- **Ospiti successivi**: Il prezzo varia in base all'età (neonato, bambino, adulto) e alla posizione nel letto (3° o 4°).
-- **Camera 2**: I prezzi sono calcolati in base al numero di occupanti (singola, doppia) e all'età per i letti aggiuntivi.
-- **Pacchetto Volo**: Il supplemento per l'aeroporto di partenza viene applicato a ogni persona pagante.
-- Il costo totale viene calcolato in tempo reale e mostrato nel riepilogo.
-- **Calcolo Età**: L'età dei partecipanti viene calcolata in base alla data di partenza del viaggio (es. 12/07/2025), configurata nel file `.env` per garantire coerenza.
+```bash
+# Build and run Crociera Fiordi
+npm run build:fiordi
+docker run -p 3001:3000 crociera-fiordi
 
-## Dashboard Amministratore
+# Build and run Crociera Mediterraneo
+npm run build:mediterraneo
+docker run -p 3002:3000 crociera-mediterraneo
+```
 
-### Accesso
-- URL: http://localhost:3000/admin
-- Password: 123456
+## ☁️ Render.com Deployment
 
-### Funzionalità
-- **Visualizzazione registrazioni** con dettagli ospiti
-- **Statistiche avanzate**:
-  - Totale registrazioni
-  - Totale persone
-  - Media ospiti per registrazione
-  - Ricavo totale
-- **Esportazione CSV** con tutti i dati
-- **Interfaccia responsive** per dispositivi mobili
+Each service can be deployed as a separate web service on Render:
 
-## Sicurezza
+1. **Connect Repository**: Link your GitHub repository to Render
+2. **Create Web Service**: Create a new web service for each form
+3. **Service Configuration**:
+   - **Root Directory**: `crociera-fiordi` or `crociera-mediterraneo`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Environment**: Set required environment variables
 
-- ✅ **Autenticazione admin** con password
-- ✅ **Transazioni database** per integrità dei dati
-- ✅ **Validazione completa** lato server e client
-- ✅ **Protezione XSS** tramite escape automatico
-- ✅ **Validazione email** HTML5
-- ⚠️ **Per produzione**: Implementare sessioni sicure per l'admin
+### Required Environment Variables
 
-## Personalizzazione
+For each service, set these environment variables in Render:
 
-### Aggiungere campi per ospiti
-Nel file `public/index.html`, modifica la funzione `updateGuestFields()` per aggiungere nuovi campi.
+```env
+PORT=3000  # Render sets this automatically
+ADMIN_PASSWORD=your_secure_admin_password
+CALCULATION_DATE=2024-12-31
 
-### Modificare la struttura dati
-1. Aggiorna la tabella `ospiti` in `server.js`
-2. Modifica la query di inserimento
-3. Aggiorna il form HTML
-4. Modifica le query di esportazione
+# Email Configuration (optional but recommended)
+SMTP_HOST=your_smtp_host
+SMTP_PORT=587
+SMTP_USER=your_email@domain.com
+SMTP_PASS=your_email_password
+EMAIL_FROM_NAME=Maeviaggi Travel Agency
+EMAIL_FROM_ADDRESS=noreply@maeviaggi.com
+```
 
-## Deploy in Produzione
+## 📊 Services Overview
 
-1. **Configura variabili d'ambiente**:
-   ```bash
-   PORT=80 npm start
-   ```
+| Service | Description | Port (Local) | Main Features |
+|---------|-------------|--------------|---------------|
+| **Crociera Fiordi** | Registration for Norwegian Fjords cruise | 3000 | Form, Admin Panel, PDF Export, Email |
+| **Crociera Mediterraneo** | Registration for Mediterranean cruise | 3000 | Form, Admin Panel, PDF Export, Email |
 
-2. **Usa un process manager**:
-   ```bash
-   npm install -g pm2
-   pm2 start server.js --name "event-form"
-   ```
+## 🌐 Service Endpoints
 
-3. **Backup automatico del database**:
-   ```bash
-   # Crea script di backup
-   cp database.sqlite backup/database_$(date +%Y%m%d).sqlite
-   ```
+Each service provides the same set of endpoints:
 
-4. **Configurazione sicurezza produzione**:
-   - Cambia password admin
-   - Implementa HTTPS
-   - Configura firewall
-   - Aggiungi rate limiting
+- **GET /** - Registration form interface
+- **POST /api/registrati** - Submit new registration
+- **GET /api/config** - Service configuration
+- **GET /api/export** - Export registrations as CSV
+- **GET /api/registrations** - List all registrations (admin)
+- **POST /api/generate-pdf/:id** - Generate PDF summary
+- **GET /admin** - Admin dashboard
+- **GET /health** - Health check endpoint
 
-## Supporto
+## 🔧 Development
 
-Per problemi o domande:
-- Verifica che tutte le dipendenze siano installate
-- Controlla che la porta 3000 sia libera
-- Verifica i permessi di scrittura per il database SQLite
-- Controlla i log del server per errori
+### Local Development with Auto-reload
 
-## Licenza
+```bash
+# For Crociera Fiordi
+npm run dev:fiordi
 
-MIT License - Vedi file LICENSE per i dettagli. 
+# For Crociera Mediterraneo
+npm run dev:mediterraneo
+```
+
+### Adding a New Form Service
+
+1. **Create Service Directory**: Copy one of the existing services
+2. **Update Configuration**: Modify `config.json` and `package.json`
+3. **Customize Forms**: Update `index.html` and styling
+4. **Deploy**: Create new web service on Render
+
+## 💾 Data Persistence
+
+Each service uses SQLite for data storage:
+- **Local**: Database files stored in `data/database.sqlite`
+- **Render**: Database persists across deployments (stored in container)
+- **Backup**: Use the CSV export feature for data backup
+
+## 🔒 Security
+
+- **Admin Access**: Protected by password set in environment variables
+- **CORS**: Configured for cross-origin requests
+- **Environment Variables**: Sensitive data stored in environment variables
+- **Input Validation**: Server-side validation for all form inputs
+
+## 📧 Email Integration
+
+Services can send confirmation emails to users:
+- Configure SMTP settings in environment variables
+- Automatic email sending after successful registration
+- HTML formatted emails with registration summary
+
+## 🏥 Monitoring
+
+Each service includes:
+- **Health Check**: `/health` endpoint for monitoring
+- **Logging**: Structured logging for debugging
+- **Error Handling**: Graceful error responses
+
+## 🔄 Migration from Microservices
+
+This project was migrated from a microservices architecture to standalone services for:
+- **Simplified Deployment**: Each service deploys independently
+- **Render Compatibility**: Better suited for Render's web service model
+- **Reduced Complexity**: No need for API gateway or service discovery
+- **Cost Efficiency**: Pay only for active services
+
+## 🛠️ Legacy Files
+
+The following files are from the old microservices architecture and can be removed if not needed:
+- `docker-compose.microservices.yml`
+- `nginx/`
+- `services/`
+- `deploy-microservices.*`
+- `README_MICROSERVICES.md`
+
+## 📞 Support
+
+For questions or issues:
+1. Check the individual service README files
+2. Review the service logs via Render dashboard
+3. Use the health check endpoints to verify service status
+
+## 🚀 Benefits of New Architecture
+
+- ✅ **Simplified Deployment**: Each service deploys independently
+- ✅ **Cloud-Native**: Optimized for Render.com and similar platforms
+- ✅ **Scalable**: Services can be scaled independently
+- ✅ **Maintainable**: Clear separation of concerns
+- ✅ **Cost-Effective**: Only pay for what you use
+- ✅ **Reliable**: Service failures are isolated

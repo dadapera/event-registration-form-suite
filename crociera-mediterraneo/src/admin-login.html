@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Maeviaggi</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-md w-96">
+    <h1 class="text-2xl font-bold text-center mb-6">Accesso Amministratore</h1>
+    <form id="adminForm" method="GET">
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+        <input type="password" name="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" required>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+        Accedi
+      </button>
+    </form>
+    <div id="errorMessage" class="text-red-500 text-sm mt-2 text-center hidden">
+      Password non corretta
+    </div>
+  </div>
+
+  <script>
+    // For standalone service, use root-level admin endpoint
+    const instanceName = 'root';
+    
+    // Set the form action to the root-level admin URL
+    document.getElementById('adminForm').action = `/admin`;
+    
+    // Show error message if password was wrong
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('password') && urlParams.get('error') === 'wrong') {
+      document.getElementById('errorMessage').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
