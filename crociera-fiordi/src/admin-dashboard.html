@@ -214,7 +214,7 @@
         table += `<td class="px-2 py-1 border-b">${roomCountsText.trim() || '-'}</td>`;
 
         // Cost info
-        const costText = reg.costo_totale_gruppo 
+        const costText = (reg.costo_totale_gruppo !== null && reg.costo_totale_gruppo !== undefined)
           ? `<span class="font-semibold">${reg.costo_totale_gruppo.toFixed(2)}</span>` 
           : '-';
         table += `<td class="px-2 py-1 border-b">${costText}</td>`;
