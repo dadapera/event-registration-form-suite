@@ -62,30 +62,60 @@ if (!fs.existsSync(instanceModulePath)) {
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 log('INFO', `Loaded configuration for ${config.name || INSTANCE_NAME}`);
 
+// Validate database URL
+const databaseUrl = process.env.RENDER_POSTGRESQL_DB_URL;
+if (!databaseUrl) {
+    log('ERROR', 'Database URL not found. Please set RENDER_POSTGRESQL_DB_URL environment variable or configure database.url in config.json');
+    process.exit(1);
+}
+
+if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+    log('ERROR', 'Invalid database URL format. Expected postgresql:// or postgres:// URL');
+    process.exit(1);
+}
+
+log('INFO', 'Database URL validated successfully');
+
 // Initialize PostgreSQL connection pool
 const dbConfig = {
-    connectionString: config.database?.url || process.env.RENDER_POSTGRESQL_DB_URL,
+    connectionString: databaseUrl,
     ssl: { rejectUnauthorized: false },
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000,
 };
 
 const pool = new Pool(dbConfig);
 
-// Test database connection
-pool.query('SELECT NOW()', (err, result) => {
-    if (err) {
-        log('ERROR', `Failed to connect to PostgreSQL database: ${err.message}`, { dbConfig: { ...dbConfig, connectionString: '***' } });
-        process.exit(1);
-    } else {
-        log('INFO', `Connected to PostgreSQL database`, { 
-            host: pool.options.host,
-            database: pool.options.database,
-            port: pool.options.port
-        });
+// Retry connection function
+async function connectWithRetry(maxRetries = 5, delay = 2000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const result = await pool.query('SELECT NOW()');
+            log('INFO', `Connected to PostgreSQL database on attempt ${attempt}`, { 
+                host: pool.options.host,
+                database: pool.options.database,
+                port: pool.options.port
+            });
+            return result;
+        } catch (err) {
+            log('WARN', `Database connection attempt ${attempt}/${maxRetries} failed: ${err.message}`);
+            
+            if (attempt === maxRetries) {
+                log('ERROR', `Failed to connect to PostgreSQL database after ${maxRetries} attempts`, { 
+                    dbConfig: { ...dbConfig, connectionString: '***' } 
+                });
+                process.exit(1);
+            }
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
-});
+}
+
+// Test database connection with retry
+connectWithRetry();
 
 // Load instance router
 const createInstanceRouter = require(instanceModulePath);
