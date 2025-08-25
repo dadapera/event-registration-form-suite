@@ -476,14 +476,90 @@
             guestBlock.remove();
             if (roomType === 'room1') {
                 companionRoom1Count = document.getElementById('companionFieldsRoom1').children.length;
+                renumberGuests('room1');
                 document.getElementById('addCompanionRoom1Button').classList.toggle('hidden', companionRoom1Count >= MAX_COMPANIONS_ROOM1);
                 document.getElementById('room1MaxReachedText').classList.toggle('hidden', companionRoom1Count < MAX_COMPANIONS_ROOM1);
             } else if (roomType === 'room2') {
                 guestRoom2Count = document.getElementById('room2GuestFields').children.length;
+                renumberGuests('room2');
                 document.getElementById('addGuestRoom2Button').classList.toggle('hidden', guestRoom2Count >= MAX_GUESTS_ROOM2);
                 document.getElementById('room2MaxReachedText').classList.toggle('hidden', guestRoom2Count < MAX_GUESTS_ROOM2);
             }
             calculateTotal();
+        }
+    }
+
+    function renumberGuests(roomType) {
+        const containerId = roomType === 'room1' ? 'companionFieldsRoom1' : 'room2GuestFields';
+        const container = document.getElementById(containerId);
+        const guestBlocks = container.children;
+        
+        for (let i = 0; i < guestBlocks.length; i++) {
+            const guestBlock = guestBlocks[i];
+            const newIndex = i + 1;
+            const roomText = roomType === 'room1' ? 'Camera 1' : 'Camera 2';
+            
+            // Update the title
+            const titleElement = guestBlock.querySelector('h3');
+            titleElement.textContent = `Ospite ${newIndex} (${roomText})`;
+            
+            // Update all form field names and IDs
+            const prefix = roomType === 'room1' ? 'ospite_room1' : 'ospite_room2';
+            const newPrefix = `${prefix}_${newIndex}`;
+            
+            // Get all input and select elements
+            const formElements = guestBlock.querySelectorAll('input, select');
+            formElements.forEach(element => {
+                if (element.name) {
+                    // Update name attribute
+                    const namePattern = new RegExp(`${prefix}_\\d+`);
+                    element.name = element.name.replace(namePattern, newPrefix);
+                }
+                if (element.id) {
+                    // Update id attribute
+                    const idPattern = new RegExp(`${prefix}_\\d+`);
+                    element.id = element.id.replace(idPattern, newPrefix);
+                }
+                // Update oninput and onchange attributes
+                if (element.getAttribute('oninput')) {
+                    const oninputPattern = new RegExp(`'${prefix}_\\d+'`, 'g');
+                    element.setAttribute('oninput', element.getAttribute('oninput').replace(oninputPattern, `'${newPrefix}'`));
+                }
+                if (element.getAttribute('onchange')) {
+                    const onchangePattern = new RegExp(`'${prefix}_\\d+'`, 'g');
+                    element.setAttribute('onchange', element.getAttribute('onchange').replace(onchangePattern, `'${newPrefix}'`));
+                }
+            });
+            
+            // Update label for attributes
+            const labels = guestBlock.querySelectorAll('label[for]');
+            labels.forEach(label => {
+                if (label.getAttribute('for')) {
+                    const forPattern = new RegExp(`${prefix}_\\d+`);
+                    label.setAttribute('for', label.getAttribute('for').replace(forPattern, newPrefix));
+                }
+            });
+            
+            // Update data-prefix attributes
+            const elementsWithDataPrefix = guestBlock.querySelectorAll('[data-prefix]');
+            elementsWithDataPrefix.forEach(element => {
+                const dataPrefixPattern = new RegExp(`${prefix}_\\d+`);
+                element.setAttribute('data-prefix', element.getAttribute('data-prefix').replace(dataPrefixPattern, newPrefix));
+            });
+            
+            // Update validation div IDs
+            const validationDivs = guestBlock.querySelectorAll('div[id*="_validation"]');
+            validationDivs.forEach(div => {
+                const validationIdPattern = new RegExp(`${prefix}_\\d+`);
+                div.id = div.id.replace(validationIdPattern, newPrefix);
+            });
+            
+            // Update address wrapper ID
+            const addressWrapper = guestBlock.querySelector('[id*="_address_wrapper"]');
+            if (addressWrapper) {
+                const wrapperIdPattern = new RegExp(`${prefix}_\\d+`);
+                addressWrapper.id = addressWrapper.id.replace(wrapperIdPattern, newPrefix);
+            }
         }
     }
 
