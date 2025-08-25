@@ -4,7 +4,7 @@ const fs = require('fs');
 const { generateRegistrationPDF } = require('../utils/pdfGenerator');
 const log = require('../utils/logger'); // Fixed path for microservices
 const { createMailer } = require('../utils/mailer');
-const { loadInstanceEnvironment } = require('../utils/envLoader');
+
 
 async function createTables(pool, instanceName) {
     try {
@@ -296,18 +296,14 @@ function generateSummaryHTML(registrationData, partenzaText) {
 // PDF generation is now handled by utils/pdfGenerator.js
 
 module.exports = function(pool, instanceName, config) {
-    // Load instance-specific environment variables
-    const instancePath = path.join(__dirname, '..'); // Go up to project root for .env files
-    const { envVars: formEnvVars, getEnvVar: getFormEnvVar } = loadInstanceEnvironment(instancePath, instanceName);
-    
-    // Create instance-specific mailer with form environment variables
+    // Create instance-specific mailer with environment variables
     const envConfig = {
-        SMTP_HOST: getFormEnvVar('SMTP_HOST'),
-        SMTP_PORT: getFormEnvVar('SMTP_PORT'),
-        SMTP_USER: getFormEnvVar('SMTP_USER'),
-        SMTP_PASS: getFormEnvVar('SMTP_PASS'),
-        EMAIL_FROM_NAME: getFormEnvVar('EMAIL_FROM_NAME'),
-        EMAIL_FROM_ADDRESS: getFormEnvVar('EMAIL_FROM_ADDRESS')
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_PORT: process.env.SMTP_PORT,
+        SMTP_USER: process.env.SMTP_USER,
+        SMTP_PASS: process.env.SMTP_PASS,
+        EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
+        EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS
     };
     const { sendMail } = createMailer(envConfig);
     
@@ -333,7 +329,7 @@ module.exports = function(pool, instanceName, config) {
         log('DEBUG', `Request for config received for instance '${instanceName}'`);
         res.json({
             name: config.name || instanceName,
-            calculationDate: getFormEnvVar('CALCULATION_DATE')
+            calculationDate: process.env.CALCULATION_DATE
         });
     });
 
@@ -888,7 +884,7 @@ module.exports = function(pool, instanceName, config) {
 
     router.get('/admin', (req, res) => {
         const password = req.query.password;
-        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
+        if (password !== process.env.ADMIN_PASSWORD) {
             if (password) log('WARN', `Failed admin login for '${instanceName}'`);
             res.sendFile(path.join(__dirname, 'admin-login.html'));
         } else {
@@ -901,7 +897,7 @@ module.exports = function(pool, instanceName, config) {
         const { password } = req.body;
         log('INFO', `Request to clear DB for '${instanceName}'`);
 
-        if (password !== getFormEnvVar('ADMIN_PASSWORD')) {
+        if (password !== process.env.ADMIN_PASSWORD) {
             log('WARN', `Failed DB clear attempt for '${instanceName}': Wrong password`);
             return res.status(401).json({ success: false, error: 'Password errata.' });
         }
