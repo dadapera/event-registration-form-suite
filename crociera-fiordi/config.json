@@ -1,8 +1,10 @@
 {
-  "name": "Crociera sui Fiordi",
-  "eventName": "Crociera sui Fiordi 2025",
-  "eventStartDate": "2025-09-12",
-  "eventEndDate": "2025-09-19",
-  "calculationDate": "2025-09-12"
+  "name": "Settimana Bianca Lafenice 2026",
+  "eventName": "Settimana Bianca Lafenice 2026",
+  "eventLocation": "TH Courmayeur",
+  "eventStartDate": "2026-03-08",
+  "eventEndDate": "2026-03-15",
+  "deadlineSubmission": "2025-10-31",
+  "calculationDate": "2026-03-08"
 }
 

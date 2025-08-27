@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crociera sui Fiordi - Modulo Iscrizione</title>
+  <title>Modulo Iscrizione</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css"/>
   <style>
@@ -14,14 +14,24 @@
   <div class="max-w-4xl mx-auto p-6 bg-white shadow-md mt-10 rounded-lg">
     <!-- Logos Section -->
     <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 lg:gap-8 mb-6">
-      <img src="assets/msc-logo.jpg" alt="MSC Logo" class="h-10 sm:h-12 lg:h-16 w-auto object-contain max-w-24 sm:max-w-32 lg:max-w-none">
       <img src="assets/mae-logo.png" alt="Mae Logo" class="h-10 sm:h-12 lg:h-16 w-auto object-contain max-w-24 sm:max-w-32 lg:max-w-none">
       <img src="assets/lafenice-logo.jpg" alt="La Fenice Logo" class="h-10 sm:h-12 lg:h-16 w-auto object-contain max-w-24 sm:max-w-32 lg:max-w-none">
     </div>
     
-    <h1 class="text-3xl font-bold text-center mb-4" id="event-title">CROCIERA SUI FIORDI</h1>
-    <p class="text-center mb-6" id="event-dates">sabato 12 Luglio - sabato 19 Luglio 2025</p>
+    <h1 class="text-3xl font-bold text-center mb-4" id="event-title">Evento</h1>
+    <h2 class="text-2xl font-bold text-center mb-4" id="event-location">Location</h2>
+    <p class="text-center mb-6" id="event-dates">Date</p>
+    <!-- Divider -->
+    <hr class="border-gray-300 my-6">
     
+    <!-- Information Section -->
+    <div class="text-center mb-6">
+      <h3 class="text-xl font-semibold mb-3">Modulo di Iscrizione</h3>
+      <p class="text-gray-700">Per procedere alla prenotazione è necessario compilare il modulo entro il <strong><span id="deadline-date"></span></strong> ponendo estrema attenzione alla correttezza dei dati inseriti.</p>
+    </div>
+    
+    <!-- Divider -->
+    <hr class="border-gray-300 my-6">
     <form id="registrationForm" class="space-y-6">
       <section>
         <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Capogruppo</h2>
@@ -309,12 +319,23 @@
           if (response.ok) {
               config = await response.json();
               if (config.calculationDate) calculationDate = new Date(config.calculationDate);
-              if (config.eventName) document.getElementById('event-title').textContent = config.eventName;
+              if (config.eventName) {
+                  document.getElementById('event-title').textContent = config.eventName;
+                  document.title = `${config.eventName} - Modulo Iscrizione`;
+              }
+              if (config.eventLocation) {
+                  document.getElementById('event-location').textContent = config.eventLocation;
+              }
               if (config.eventStartDate && config.eventEndDate) {
                   const startDate = new Date(config.eventStartDate);
                   const endDate = new Date(config.eventEndDate);
                   const formattedDates = `${startDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })} - ${endDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
                   document.getElementById('event-dates').textContent = formattedDates;
+              }
+              if (config.deadlineSubmission) {
+                  const deadlineDate = new Date(config.deadlineSubmission);
+                  const formattedDeadline = deadlineDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+                  document.getElementById('deadline-date').textContent = formattedDeadline;
               }
           } else console.error('Failed to fetch config, using default date.');
       } catch (error) {
@@ -411,7 +432,7 @@
         const payload = {
             nome: data.nome, cognome: data.cognome, email: data.email, cellulare: phoneInput.getNumber(),
             data_nascita: data.data_nascita, indirizzo: `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`,
-            codice_fiscale: data.codice_fiscale, partenza: data.partenza, evento: config.eventName || 'Crociera sui Fiordi 2025',
+            codice_fiscale: data.codice_fiscale, partenza: data.partenza, evento: config.eventName || 'Evento',
             ...calculatedRoomCounts,
             costo_totale_gruppo: parseFloat(document.getElementById('prezzoTotale').textContent.replace('€', '')),
             ospiti: ospiti,

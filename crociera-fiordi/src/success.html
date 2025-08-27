@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Iscrizione Completata - Crociera sui Fiordi</title>
+  <title>Iscrizione Completata</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     .fade-in {
@@ -50,8 +50,9 @@
         <div class="mb-8">
           <div class="bg-gray-50 rounded-lg p-4 text-center">
             <h3 class="font-semibold text-gray-900 mb-2">Evento</h3>
-            <p class="text-lg font-medium text-blue-600" id="event-name">CROCIERA SUI FIORDI</p>
-            <p class="text-sm text-gray-600" id="event-dates">sabato 12 Luglio - sabato 19 Luglio 2025</p>
+            <p class="text-lg font-medium text-blue-600" id="event-name">Evento</p>
+            <p class="text-base font-medium text-gray-700" id="event-location">Location</p>
+            <p class="text-sm text-gray-600" id="event-dates">Date</p>
           </div>
         </div>
 
@@ -106,7 +107,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const registrationId = urlParams.get('id');
       const email = urlParams.get('email');
-      const eventName = urlParams.get('event') || 'CROCIERA SUI FIORDI';
+      const eventName = urlParams.get('event') || 'Evento';
 
       // Load config for event details
       try {
@@ -115,11 +116,15 @@
         const config = await response.json();
         if (config.eventName) {
           document.getElementById('event-name').textContent = config.eventName;
+          document.title = `Iscrizione Completata - ${config.eventName}`;
+        }
+        if (config.eventLocation) {
+          document.getElementById('event-location').textContent = config.eventLocation;
         }
         if (config.eventStartDate && config.eventEndDate) {
           const startDate = new Date(config.eventStartDate);
           const endDate = new Date(config.eventEndDate);
-          const formattedDates = `${startDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })} - ${endDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+          const formattedDates = `${startDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - ${endDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
           document.getElementById('event-dates').textContent = formattedDates;
         }
       }

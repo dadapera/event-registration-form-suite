@@ -330,8 +330,10 @@ module.exports = function(pool, instanceName, config) {
         res.json({
             name: config.name || instanceName,
             eventName: config.eventName || config.name || instanceName,
+            eventLocation: config.eventLocation,
             eventStartDate: config.eventStartDate,
             eventEndDate: config.eventEndDate,
+            deadlineSubmission: config.deadlineSubmission,
             calculationDate: config.calculationDate
         });
     });

@@ -1,4 +1,3 @@
-// Standalone server for Crociera sui Fiordi registration service
 require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
@@ -9,7 +8,7 @@ const log = require('./utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const INSTANCE_NAME = 'crociera-fiordi';
+const INSTANCE_NAME = 'settimana-bianca-Lafenice-2026';
 
 // Middleware
 app.use(cors());
@@ -20,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (req, res) => {
     res.status(200).json({ 
         status: 'healthy', 
-        service: 'Crociera sui Fiordi',
+        service: INSTANCE_NAME,
         instance: INSTANCE_NAME,
         timestamp: new Date().toISOString()
     });
@@ -174,7 +173,7 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    log('SYSTEM', `Crociera sui Fiordi service started`, { 
+    log('SYSTEM', `${INSTANCE_NAME} service started`, { 
         port: PORT,
         name: config.name,
         instanceName: INSTANCE_NAME
