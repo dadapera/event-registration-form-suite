@@ -21,20 +21,49 @@
     <h1 class="text-3xl font-bold text-center mb-4" id="event-title">Evento</h1>
     <h2 class="text-2xl font-bold text-center mb-4" id="event-location">Location</h2>
     <p class="text-center mb-6" id="event-dates">Date</p>
+   
+   
     <!-- Divider -->
-    <hr class="border-gray-300 my-6">
-    
+    <hr class="border-gray-300 my-6"> 
     <!-- Information Section -->
     <div class="text-center mb-6">
       <h3 class="text-xl font-semibold mb-3">Modulo di Iscrizione</h3>
       <p class="text-gray-700">Per procedere alla prenotazione è necessario compilare il modulo entro il <strong><span id="deadline-date"></span></strong> ponendo estrema attenzione alla correttezza dei dati inseriti.</p>
     </div>
-    
     <!-- Divider -->
     <hr class="border-gray-300 my-6">
+
+    <!-- Agente di Riferimento Section -->
+    <section>
+      <h2 class="text-xl font-semibold mb-2">Agente di Riferimento</h2>
+      <p class="text-sm text-red-600 mb-2">Campo obbligatorio</p>
+      <div>
+        <label class="block mb-0.5 font-medium text-sm">Selezionare Agente di Riferimento *</label>
+        <select name="agente_riferimento" id="agente_riferimento" class="w-50 border border-gray-300 py-1 px-2 rounded text-sm" required>
+          <option value="">-- Seleziona un agente --</option>
+          <option value="AURELI MASSIMO">AURELI MASSIMO</option>
+          <option value="CALVARESI LUCA">CALVARESI LUCA</option>
+          <option value="CARMINUCCI FEDERICO">CARMINUCCI FEDERICO</option>
+          <option value="COCCIA MASSIMILIANO">COCCIA MASSIMILIANO</option>
+          <option value="DE CANNAS MARCO">DE CANNAS MARCO</option>
+          <option value="DI BIAGIO GIANLUCA">DI BIAGIO GIANLUCA</option>
+          <option value="DI LORENZO FEDERICO">DI LORENZO FEDERICO</option>
+          <option value="FORTI ANDREA">FORTI ANDREA</option>
+          <option value="ISOPI GIACOMO">ISOPI GIACOMO</option>
+          <option value="MASSI VINCENZO">MASSI VINCENZO</option>
+          <option value="PERLETTA FERDINANDO">PERLETTA FERDINANDO</option>
+          <option value="PULCINI GIANNI">PULCINI GIANNI</option>
+          <option value="DI FILIPPO GIANLUCA">DI FILIPPO GIANLUCA</option>
+          <option value="GABRIELLI EMANUELE">GABRIELLI EMANUELE</option>
+        </select>
+      </div>
+    </section>
+    <!-- Divider -->
+    <hr class="border-gray-300 my-6">
+
     <form id="registrationForm" class="space-y-6">
       <section>
-        <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Capogruppo</h2>
+        <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Partecipante</h2>
         <p class="text-sm text-red-600 mb-2">I campi contrassegnati con * sono obbligatori</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
           <div>
@@ -64,6 +93,11 @@
           <div class="w-full">
             <label class="block mb-0.5 font-medium text-sm">Cellulare *</label>
             <input type="tel" name="cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{10}" maxlength="10" title="Inserire un numero di 10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+
+          <!-- Contact Information Notice -->
+          <div class="md:col-span-2">
+            <p class="text-sm text-gray-600 italic">I recapiti forniti saranno utilizzati per tutte le comunicazioni inerenti al viaggio</p>
           </div>
 
           <!-- New Separated Address Fields for Capogruppo -->
@@ -329,7 +363,7 @@
               if (config.eventStartDate && config.eventEndDate) {
                   const startDate = new Date(config.eventStartDate);
                   const endDate = new Date(config.eventEndDate);
-                  const formattedDates = `${startDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })} - ${endDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
+                  const formattedDates = `${startDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - ${endDate.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`;
                   document.getElementById('event-dates').textContent = formattedDates;
               }
               if (config.deadlineSubmission) {
@@ -433,6 +467,7 @@
             nome: data.nome, cognome: data.cognome, email: data.email, cellulare: phoneInput.getNumber(),
             data_nascita: data.data_nascita, indirizzo: `${data.via_e_numero_civico}, ${data.cap} ${data.citta}, ${data.provincia}`,
             codice_fiscale: data.codice_fiscale, partenza: data.partenza, evento: config.eventName || 'Evento',
+            agente: data.agente_riferimento,
             ...calculatedRoomCounts,
             costo_totale_gruppo: parseFloat(document.getElementById('prezzoTotale').textContent.replace('€', '')),
             ospiti: ospiti,

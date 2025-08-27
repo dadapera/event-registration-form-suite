@@ -17,7 +17,7 @@ async function createTables(pool, instanceName) {
             camera_singola INTEGER DEFAULT 0, camera_doppia INTEGER DEFAULT 0,
             camera_tripla INTEGER DEFAULT 0, camera_quadrupla INTEGER DEFAULT 0,
             costo_totale_gruppo REAL, evento TEXT, data_iscrizione TEXT,
-            fatturazione_aziendale BOOLEAN DEFAULT false
+            fatturazione_aziendale BOOLEAN DEFAULT false, agente TEXT
         )`);
 
         // Create accompagnatori_dettagli table
@@ -433,7 +433,8 @@ module.exports = function(pool, instanceName, config) {
             costo_totale_gruppo,
             ospiti,
             fatturazione_aziendale,
-            dati_fatturazione
+            dati_fatturazione,
+            agente
         } = req.body;
 
         try {
@@ -463,15 +464,15 @@ module.exports = function(pool, instanceName, config) {
                     INSERT INTO registrazioni (
                         user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
                         partenza, evento, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
-                        costo_totale_gruppo, data_iscrizione, fatturazione_aziendale
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                        costo_totale_gruppo, data_iscrizione, fatturazione_aziendale, agente
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                     RETURNING id
                 `;
                 
                 const mainInsertResult = await client.query(mainInsertQuery, [
                     user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
                     partenza, evento, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
-                    costo_totale_gruppo, new Date().toISOString(), fatturazione_aziendale
+                    costo_totale_gruppo, new Date().toISOString(), fatturazione_aziendale, agente
                 ]);
                 
                 const registrationId = mainInsertResult.rows[0].id;

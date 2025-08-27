@@ -175,6 +175,7 @@
                <th class="px-2 py-2 border-b text-left">Dati Anagrafici</th>
                <th class="px-2 py-2 border-b text-left">Contatti</th>
               <th class="px-2 py-2 border-b text-left">Partenza</th>
+              <th class="px-2 py-2 border-b text-left">Agente</th>
               <th class="px-2 py-2 border-b text-left">Camere</th>
               <th class="px-2 py-2 border-b text-left">Costo (€)</th>
               <th class="px-2 py-2 border-b text-left">Accompagnatori</th>
@@ -204,6 +205,7 @@
          table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${reg.indirizzo || '-'}<br>CF: ${reg.codice_fiscale || '-'}</td>`;
          table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
         table += `<td class="px-2 py-1 border-b">${reg.partenza || '-'}</td>`;
+        table += `<td class="px-2 py-1 border-b">${reg.agente || '-'}</td>`;
         
         // Room info
         let roomCountsText = '';
@@ -250,6 +252,7 @@
            table += `<td class="px-2 py-1 border-b font-medium text-sm">${guest.nome} ${guest.cognome}</td>`;
            table += `<td class="px-2 py-1 border-b text-sm">Nato: ${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Ind: ${guest.indirizzo || '-'}<br>CF: ${guest.codice_fiscale || '-'}</td>`;
            table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
+          table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
