@@ -34,34 +34,33 @@
     <!-- Divider -->
     <hr class="border-gray-300 my-6">
 
-    <!-- Agente di Riferimento Section -->
-    <section>
-      <h2 class="text-xl font-semibold mb-2">Agente di Riferimento</h2>
-      <div>
-        <label class="block mb-0.5 font-medium text-sm">Selezionare Agente di Riferimento *</label>
-        <select name="agente_riferimento" id="agente_riferimento" class="w-50 border border-gray-300 py-1 px-2 rounded text-sm" required>
-          <option value="">-- Seleziona un agente --</option>
-          <option value="AURELI MASSIMO">AURELI MASSIMO</option>
-          <option value="CALVARESI LUCA">CALVARESI LUCA</option>
-          <option value="CARMINUCCI FEDERICO">CARMINUCCI FEDERICO</option>
-          <option value="COCCIA MASSIMILIANO">COCCIA MASSIMILIANO</option>
-          <option value="DE CANNAS MARCO">DE CANNAS MARCO</option>
-          <option value="DI BIAGIO GIANLUCA">DI BIAGIO GIANLUCA</option>
-          <option value="DI LORENZO FEDERICO">DI LORENZO FEDERICO</option>
-          <option value="FORTI ANDREA">FORTI ANDREA</option>
-          <option value="ISOPI GIACOMO">ISOPI GIACOMO</option>
-          <option value="MASSI VINCENZO">MASSI VINCENZO</option>
-          <option value="PERLETTA FERDINANDO">PERLETTA FERDINANDO</option>
-          <option value="PULCINI GIANNI">PULCINI GIANNI</option>
-          <option value="DI FILIPPO GIANLUCA">DI FILIPPO GIANLUCA</option>
-          <option value="GABRIELLI EMANUELE">GABRIELLI EMANUELE</option>
-        </select>
-      </div>
-    </section>
-    <!-- Divider -->
-    <hr class="border-gray-300 my-6">
-
     <form id="registrationForm" class="space-y-6">
+      <!-- Agente di Riferimento Section -->
+      <section>
+        <h2 class="text-xl font-semibold mb-2">Agente di Riferimento</h2>
+        <div>
+          <label class="block mb-0.5 font-medium text-sm">Selezionare Agente di Riferimento *</label>
+          <select name="agente_riferimento" id="agente_riferimento" class="w-50 border border-gray-300 py-1 px-2 rounded text-sm" required>
+            <option value="">-- Seleziona un agente --</option>
+            <option value="AURELI MASSIMO">AURELI MASSIMO</option>
+            <option value="CALVARESI LUCA">CALVARESI LUCA</option>
+            <option value="CARMINUCCI FEDERICO">CARMINUCCI FEDERICO</option>
+            <option value="COCCIA MASSIMILIANO">COCCIA MASSIMILIANO</option>
+            <option value="DE CANNAS MARCO">DE CANNAS MARCO</option>
+            <option value="DI BIAGIO GIANLUCA">DI BIAGIO GIANLUCA</option>
+            <option value="DI LORENZO FEDERICO">DI LORENZO FEDERICO</option>
+            <option value="FORTI ANDREA">FORTI ANDREA</option>
+            <option value="ISOPI GIACOMO">ISOPI GIACOMO</option>
+            <option value="MASSI VINCENZO">MASSI VINCENZO</option>
+            <option value="PERLETTA FERDINANDO">PERLETTA FERDINANDO</option>
+            <option value="PULCINI GIANNI">PULCINI GIANNI</option>
+            <option value="DI FILIPPO GIANLUCA">DI FILIPPO GIANLUCA</option>
+            <option value="GABRIELLI EMANUELE">GABRIELLI EMANUELE</option>
+          </select>
+        </div>
+      </section>
+      <!-- Divider -->
+      <hr class="border-gray-300 my-6">
       <section>
         <h2 class="text-xl font-semibold mb-2">Informazioni Personali - Partecipante</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
@@ -200,19 +199,19 @@
           
           <!-- Address Fields for Private Billing -->
           <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo di Residenza *</div>
-          <div class="md:col-span-2">
-            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
-            <input type="text" name="fattura_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
-          </div>
-          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div class="sm:col-span-2">
+              <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+              <input type="text" name="fattura_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+            </div>
             <div>
               <label class="block mb-0.5 font-medium text-sm">CAP *</label>
               <input type="text" name="fattura_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
             </div>
-            <div>
-              <label class="block mb-0.5 font-medium text-sm">Città di Residenza *</label>
-              <input type="text" name="fattura_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
-            </div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Città di Residenza *</label>
+            <input type="text" name="fattura_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
           </div>
         </div>
         
@@ -229,19 +228,19 @@
           
           <!-- Address Fields for Company Billing -->
           <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo della Sede Legale *</div>
-          <div class="md:col-span-2">
-            <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
-            <input type="text" name="sede_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
-          </div>
-          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+          <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-x-4">
+            <div class="sm:col-span-2">
+              <label class="block mb-0.5 font-medium text-sm">Via e Nr. Civico *</label>
+              <input type="text" name="sede_via_e_numero_civico" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
+            </div>
             <div>
               <label class="block mb-0.5 font-medium text-sm">CAP *</label>
               <input type="text" name="sede_cap" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{5}" title="Inserire 5 cifre" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
             </div>
-            <div>
-              <label class="block mb-0.5 font-medium text-sm">Città *</label>
-              <input type="text" name="sede_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
-            </div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block mb-0.5 font-medium text-sm">Città *</label>
+            <input type="text" name="sede_citta" class="w-full border border-gray-300 py-1 px-2 rounded text-sm">
           </div>
         </div>
       </section>

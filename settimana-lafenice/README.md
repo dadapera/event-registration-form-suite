@@ -1,6 +1,6 @@
-# Crociera sui Fiordi - Standalone Service
+# Settimana La Fenice - Standalone Service
 
-Standalone registration service for Crociera sui Fiordi events.
+Standalone registration service for Settimana La Fenice events.
 
 ## 🚀 Quick Start
 

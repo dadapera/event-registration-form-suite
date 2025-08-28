@@ -112,7 +112,7 @@
       const roomStats = document.getElementById('roomStats');
       
       if (registrations.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">Nessuna registrazione trovata</p>';
+        container.innerHTML = '<p class="text-gray-500">Nessuna registrazione</p>';
         stats.classList.add('hidden');
         roomStats.classList.add('hidden');
         return;
@@ -186,8 +186,12 @@
       `;
       
       let rowIndex = 0;
-      Object.values(groupedRegistrations).forEach(group => {
-        if (!group.capogruppo) return;
+      // Sort grouped registrations by ID in descending order
+      const sortedGroups = Object.values(groupedRegistrations)
+        .filter(group => group.capogruppo)
+        .sort((a, b) => b.capogruppo.id - a.capogruppo.id);
+      
+      sortedGroups.forEach(group => {
         
         const reg = group.capogruppo;
         const hasGuests = group.guests.length > 0;

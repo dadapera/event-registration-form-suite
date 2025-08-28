@@ -61,41 +61,41 @@ read -p "Enter your choice (1-5): " choice
 case $choice in
     1)
         echo "Installing dependencies for all services..."
-        install_service "crociera-fiordi"
+        install_service "settimana-lafenice"
         install_service "crociera-mediterraneo"
         echo "🎉 All dependencies installed!"
         ;;
     2)
         echo "Building Docker images for all services..."
-        build_docker "crociera-fiordi"
+        build_docker "settimana-lafenice"
         build_docker "crociera-mediterraneo"
         echo "🎉 All Docker images built!"
         ;;
     3)
         echo "Running services locally..."
-        run_service "crociera-fiordi" "3001"
+        run_service "settimana-lafenice" "3001"
         run_service "crociera-mediterraneo" "3002"
         echo "🎉 All services are running!"
         echo "📋 Service URLs:"
-        echo "   • Crociera Fiordi: http://localhost:3001"
+        echo "   • Settimana La Fenice: http://localhost:3001"
         echo "   • Crociera Mediterraneo: http://localhost:3002"
         ;;
     4)
         echo "Full deployment starting..."
-        install_service "crociera-fiordi"
+        install_service "settimana-lafenice"
         install_service "crociera-mediterraneo"
-        build_docker "crociera-fiordi"
+        build_docker "settimana-lafenice"
         build_docker "crociera-mediterraneo"
-        run_service "crociera-fiordi" "3001"
+        run_service "settimana-lafenice" "3001"
         run_service "crociera-mediterraneo" "3002"
         echo "🎉 Full deployment completed!"
         echo "📋 Service URLs:"
-        echo "   • Crociera Fiordi: http://localhost:3001"
+        echo "   • Settimana La Fenice: http://localhost:3001"
         echo "   • Crociera Mediterraneo: http://localhost:3002"
         ;;
     5)
         echo "📊 Service Status:"
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "crociera-(fiordi|mediterraneo)"
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(settimana-lafenice|crociera-mediterraneo)"
         ;;
     *)
         echo "❌ Invalid choice. Please run the script again."
@@ -105,5 +105,5 @@ esac
 
 echo ""
 echo "ℹ️  For Render.com deployment, see RENDER_DEPLOYMENT_GUIDE.md"
-echo "ℹ️  To stop services: docker stop crociera-fiordi-container crociera-mediterraneo-container"
-echo "ℹ️  To remove containers: docker rm crociera-fiordi-container crociera-mediterraneo-container"
+echo "ℹ️  To stop services: docker stop settimana-lafenice-container crociera-mediterraneo-container"
+echo "ℹ️  To remove containers: docker rm settimana-lafenice-container crociera-mediterraneo-container"

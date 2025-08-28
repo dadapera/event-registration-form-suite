@@ -26,39 +26,39 @@ goto menu
 
 :install_deps
 echo Installing dependencies for all services...
-call :install_service crociera-fiordi
+call :install_service settimana-lafenice
 call :install_service crociera-mediterraneo
 echo 🎉 All dependencies installed!
 goto end
 
 :build_images
 echo Building Docker images for all services...
-call :build_docker crociera-fiordi
+call :build_docker settimana-lafenice
 call :build_docker crociera-mediterraneo
 echo 🎉 All Docker images built!
 goto end
 
 :run_services
 echo Running services locally...
-call :run_service crociera-fiordi 3001
+call :run_service settimana-lafenice 3001
 call :run_service crociera-mediterraneo 3002
 echo 🎉 All services are running!
 echo 📋 Service URLs:
-echo    • Crociera Fiordi: http://localhost:3001
+echo    • Settimana La Fenice: http://localhost:3001
 echo    • Crociera Mediterraneo: http://localhost:3002
 goto end
 
 :full_deploy
 echo Full deployment starting...
-call :install_service crociera-fiordi
+call :install_service settimana-lafenice
 call :install_service crociera-mediterraneo
-call :build_docker crociera-fiordi
+call :build_docker settimana-lafenice
 call :build_docker crociera-mediterraneo
-call :run_service crociera-fiordi 3001
+call :run_service settimana-lafenice 3001
 call :run_service crociera-mediterraneo 3002
 echo 🎉 Full deployment completed!
 echo 📋 Service URLs:
-echo    • Crociera Fiordi: http://localhost:3001
+echo    • Settimana La Fenice: http://localhost:3001
 echo    • Crociera Mediterraneo: http://localhost:3002
 goto end
 
@@ -111,6 +111,6 @@ exit /b 0
 :end
 echo.
 echo ℹ️  For Render.com deployment, see RENDER_DEPLOYMENT_GUIDE.md
-echo ℹ️  To stop services: docker stop crociera-fiordi-container crociera-mediterraneo-container
-echo ℹ️  To remove containers: docker rm crociera-fiordi-container crociera-mediterraneo-container
+echo ℹ️  To stop services: docker stop settimana-lafenice-container crociera-mediterraneo-container
+echo ℹ️  To remove containers: docker rm settimana-lafenice-container crociera-mediterraneo-container
 pause

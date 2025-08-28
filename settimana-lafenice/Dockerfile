@@ -1,4 +1,4 @@
-# Dockerfile for Crociera sui Fiordi Standalone Service
+# Dockerfile for Settimana La Fenice Standalone Service
 FROM node:18-alpine
 
 # Install curl for health checks, fonts for PDF generation, and PostgreSQL client

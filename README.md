@@ -8,7 +8,7 @@ This project has been restructured and cleaned up to provide completely isolated
 
 ```
 event-form-suite/
-├── crociera-fiordi/           # Complete standalone service for Fiordi cruise
+├── settimana-lafenice/        # Complete standalone service for La Fenice cruise
 ├── crociera-mediterraneo/     # Complete standalone service for Mediterranean cruise
 ├── deploy-standalone.*        # Deployment scripts for both services
 ├── README.md                  # This documentation
@@ -26,9 +26,9 @@ Each service is completely self-contained with its own:
 
 ### Option 1: Run Individual Services Locally
 
-**Crociera sui Fiordi:**
+**Settimana La Fenice:**
 ```bash
-cd crociera-fiordi
+cd settimana-lafenice
 npm install
 npm start
 # Service available at http://localhost:3000
@@ -53,9 +53,9 @@ npm run install:all
 Each service can be built and run independently:
 
 ```bash
-# Build and run Crociera Fiordi
-npm run build:fiordi
-docker run -p 3001:3000 crociera-fiordi
+# Build and run Settimana La Fenice
+npm run build:lafenice
+docker run -p 3001:3000 settimana-lafenice
 
 # Build and run Crociera Mediterraneo
 npm run build:mediterraneo
@@ -69,7 +69,7 @@ Each service can be deployed as a separate web service on Render:
 1. **Connect Repository**: Link your GitHub repository to Render
 2. **Create Web Service**: Create a new web service for each form
 3. **Service Configuration**:
-   - **Root Directory**: `crociera-fiordi` or `crociera-mediterraneo`
+   - **Root Directory**: `settimana-lafenice` or `crociera-mediterraneo`
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
    - **Environment**: Set required environment variables
@@ -96,7 +96,7 @@ EMAIL_FROM_ADDRESS=noreply@maeviaggi.com
 
 | Service | Description | Port (Local) | Main Features |
 |---------|-------------|--------------|---------------|
-| **Crociera Fiordi** | Registration for Norwegian Fjords cruise | 3000 | Form, Admin Panel, PDF Export, Email |
+| **Settimana La Fenice** | Registration for La Fenice cruise | 3000 | Form, Admin Panel, PDF Export, Email |
 | **Crociera Mediterraneo** | Registration for Mediterranean cruise | 3000 | Form, Admin Panel, PDF Export, Email |
 
 ## 🌐 Service Endpoints
@@ -117,8 +117,8 @@ Each service provides the same set of endpoints:
 ### Local Development with Auto-reload
 
 ```bash
-# For Crociera Fiordi
-npm run dev:fiordi
+# For Settimana La Fenice
+npm run dev:lafenice
 
 # For Crociera Mediterraneo
 npm run dev:mediterraneo

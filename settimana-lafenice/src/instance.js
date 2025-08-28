@@ -367,32 +367,16 @@ function generateSummaryHTML(registrationData) {
                     <div class="section-title">Dati Fatturazione Aziendale</div>
                     <div class="grid">
                         <div class="info-item">
-                            <div class="info-label">Ragione Sociale</div>
+                            <div class="info-label">Nome Azienda</div>
                             <div class="info-value">${registrationData.dati_fatturazione.ragione_sociale || '-'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Partita IVA</div>
                             <div class="info-value">${registrationData.dati_fatturazione.partita_iva || '-'}</div>
                         </div>
-                        <div class="info-item">
-                            <div class="info-label">Codice Fiscale Azienda</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.codice_fiscale_azienda || '-'}</div>
-                        </div>
                         <div class="info-item grid-full">
-                            <div class="info-label">Indirizzo Sede Legale</div>
+                            <div class="info-label">Via e Nr. Civico, CAP, Città</div>
                             <div class="info-value">${registrationData.dati_fatturazione.indirizzo_sede_legale || '-'}</div>
-                        </div>
-                        ${registrationData.dati_fatturazione.sede_via_e_numero_civico ? `<div class="info-item grid-full">
-                            <div class="info-label">Indirizzo Completo Sede</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.sede_via_e_numero_civico}, ${registrationData.dati_fatturazione.sede_cap} ${registrationData.dati_fatturazione.sede_citta}</div>
-                        </div>` : ''}
-                        <div class="info-item">
-                            <div class="info-label">Codice SDI</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.codice_sdi || '-'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">PEC Azienda</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.pec_azienda || '-'}</div>
                         </div>
                     </div>
                 </div>

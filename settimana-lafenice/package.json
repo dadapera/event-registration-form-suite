@@ -1,15 +1,15 @@
 {
-  "name": "crociera-fiordi-service",
+  "name": "settimana-lafenice-service",
   "version": "1.0.0",
-  "description": "Standalone service for Crociera sui Fiordi registration form",
+  "description": "Standalone service for Settimana La Fenice registration form",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "docker:build": "docker build -t crociera-fiordi .",
-    "docker:run": "docker run -d --name crociera-fiordi-container -p 3001:3000 crociera-fiordi",
-    "docker:logs": "docker logs -f crociera-fiordi-container",
-    "docker:stop": "docker stop crociera-fiordi-container && docker rm crociera-fiordi-container",
+    "docker:build": "docker build -t settimana-lafenice .",
+    "docker:run": "docker run -d --name settimana-lafenice-container -p 3001:3000 settimana-lafenice",
+    "docker:logs": "docker logs -f settimana-lafenice-container",
+    "docker:stop": "docker stop settimana-lafenice-container && docker rm settimana-lafenice-container",
     "docker:restart": "npm run docker:stop && npm run docker:run",
     "docker:combo": "npm run docker:stop && npm run docker:build && npm run docker:run && npm run docker:logs"
   },
@@ -17,7 +17,7 @@
     "travel",
     "registration",
     "cruise",
-    "fiordi",
+    "lafenice",
     "nodejs",
     "express",
     "postgresql"
