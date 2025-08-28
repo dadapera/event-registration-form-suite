@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const log = require('./logger');
+const path = require('path');
 
 /**
  * Creates a mailer instance with the provided environment configuration
@@ -35,6 +36,13 @@ function createMailer(envConfig) {
             to: to,
             subject: subject,
             html: html,
+            attachments: [
+                {
+                    filename: 'mae-logo.png',
+                    path: path.join(__dirname, '..', 'assets', 'mae-logo.png'),
+                    cid: 'mae-logo'
+                }
+            ]
         };
 
         try {

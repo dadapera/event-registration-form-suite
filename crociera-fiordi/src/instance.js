@@ -5,6 +5,50 @@ const { generateRegistrationPDF } = require('../utils/pdfGenerator');
 const log = require('../utils/logger'); // Fixed path for microservices
 const { createMailer } = require('../utils/mailer');
 
+// Function to format date to readable Italian format
+function formatDateToItalian(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        const date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) return dateString;
+        
+        return date.toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Europe/Rome'
+        });
+    } catch (error) {
+        return dateString;
+    }
+}
+
+// Function to format birth date (date only, no time)
+function formatBirthDate(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        const date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) return dateString;
+        
+        return date.toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            timeZone: 'Europe/Rome'
+        });
+    } catch (error) {
+        return dateString;
+    }
+}
+
 
 async function createTables(pool, instanceName) {
     try {
@@ -13,7 +57,9 @@ async function createTables(pool, instanceName) {
             id SERIAL PRIMARY KEY,
             user_id TEXT UNIQUE,
             nome TEXT, cognome TEXT, email TEXT, cellulare TEXT, data_nascita TEXT,
-            indirizzo TEXT, codice_fiscale TEXT, partenza TEXT,
+            via_e_numero_civico TEXT, cap TEXT, citta TEXT, provincia TEXT,
+            indirizzo TEXT, codice_fiscale TEXT, luogo_nascita TEXT, cittadinanza TEXT,
+            esigenze_alimentari TEXT,
             camera_singola INTEGER DEFAULT 0, camera_doppia INTEGER DEFAULT 0,
             camera_tripla INTEGER DEFAULT 0, camera_quadrupla INTEGER DEFAULT 0,
             costo_totale_gruppo REAL, evento TEXT, data_iscrizione TEXT,
@@ -24,18 +70,59 @@ async function createTables(pool, instanceName) {
         await pool.query(`CREATE TABLE IF NOT EXISTS accompagnatori_dettagli (
             id SERIAL PRIMARY KEY,
             registrazione_id INTEGER, nome TEXT, cognome TEXT, data_nascita TEXT,
-            indirizzo TEXT, codice_fiscale TEXT,
+            indirizzo TEXT, codice_fiscale TEXT, luogo_nascita TEXT, cittadinanza TEXT,
+            email TEXT, cellulare TEXT, esigenze_alimentari TEXT,
             FOREIGN KEY(registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
         )`);
 
-        // Create dati_fatturazione table
+        // Create dati_fatturazione table with enhanced private billing support
         await pool.query(`CREATE TABLE IF NOT EXISTS dati_fatturazione (
             id SERIAL PRIMARY KEY,
-            registrazione_id INTEGER, ragione_sociale TEXT, partita_iva TEXT,
+            registrazione_id INTEGER,
+            -- Company billing fields
+            ragione_sociale TEXT, partita_iva TEXT,
             codice_fiscale_azienda TEXT, indirizzo_sede_legale TEXT,
+            sede_via_e_numero_civico TEXT, sede_cap TEXT, sede_citta TEXT,
             codice_sdi TEXT, pec_azienda TEXT,
+            -- Private billing fields  
+            fattura_nome TEXT, fattura_cognome TEXT, fattura_codice_fiscale TEXT,
+            fattura_via_e_numero_civico TEXT, fattura_cap TEXT, fattura_citta TEXT,
+            indirizzo_residenza TEXT,
             FOREIGN KEY(registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
         )`);
+        
+        // Add new columns to existing tables if they don't exist
+        try {
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS luogo_nascita TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS cittadinanza TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS esigenze_alimentari TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS via_e_numero_civico TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS cap TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS citta TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS provincia TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS agente TEXT`);
+            
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS luogo_nascita TEXT`);
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS cittadinanza TEXT`);
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS email TEXT`);
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS cellulare TEXT`);
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS esigenze_alimentari TEXT`);
+            
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_nome TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_cognome TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_codice_fiscale TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_via_e_numero_civico TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_cap TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_citta TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS indirizzo_residenza TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS sede_via_e_numero_civico TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS sede_cap TEXT`);
+            await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS sede_citta TEXT`);
+            
+            log('SYSTEM', `Database schema updated with new fields for instance '${instanceName}'.`);
+        } catch (error) {
+            log('WARN', `Schema update failed (may be normal if columns already exist): ${error.message}`);
+        }
         
         log('SYSTEM', `Database tables ready for instance '${instanceName}'.`);
     } catch (error) {
@@ -45,7 +132,7 @@ async function createTables(pool, instanceName) {
 }
 
 // Function to generate PDF summary content
-function generateSummaryHTML(registrationData, partenzaText) {
+function generateSummaryHTML(registrationData) {
     return `
         <!DOCTYPE html>
         <html lang="it">
@@ -150,7 +237,7 @@ function generateSummaryHTML(registrationData, partenzaText) {
                 <div class="header">
                     <h1>Riepilogo Iscrizione</h1>
                     <h2>${registrationData.evento}</h2>
-                    <p>Data iscrizione: ${registrationData.data_iscrizione}</p>
+                    <p>Data iscrizione: ${formatDateToItalian(registrationData.data_iscrizione)}</p>
                 </div>
 
                 <div class="section">
@@ -174,42 +261,51 @@ function generateSummaryHTML(registrationData, partenzaText) {
                         </div>
                         <div class="info-item">
                             <div class="info-label">Data di Nascita</div>
-                            <div class="info-value">${registrationData.data_nascita}</div>
+                            <div class="info-value">${formatBirthDate(registrationData.data_nascita)}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Indirizzo</div>
-                            <div class="info-value">${registrationData.indirizzo}</div>
+                            <div class="info-value">${registrationData.via_e_numero_civico ? `${registrationData.via_e_numero_civico}, ${registrationData.cap} ${registrationData.citta}, ${registrationData.provincia}` : registrationData.indirizzo}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Codice Fiscale</div>
                             <div class="info-value">${registrationData.codice_fiscale}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Partenza</div>
-                            <div class="info-value">${partenzaText}</div>
+                            <div class="info-label">Luogo di Nascita</div>
+                            <div class="info-value">${registrationData.luogo_nascita || '-'}</div>
                         </div>
+                        <div class="info-item">
+                            <div class="info-label">Cittadinanza</div>
+                            <div class="info-value">${registrationData.cittadinanza || '-'}</div>
+                        </div>
+                        ${registrationData.esigenze_alimentari ? `<div class="info-item grid-full">
+                            <div class="info-label">Esigenze Alimentari</div>
+                            <div class="info-value">${registrationData.esigenze_alimentari}</div>
+                        </div>` : ''}
+
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="section-title">Configurazione Camere</div>
                     <div class="grid">
-                        <div class="info-item">
+                        ${registrationData.camera_singola > 0 ? `<div class="info-item">
                             <div class="info-label">Camera Singola</div>
                             <div class="info-value">${registrationData.camera_singola}</div>
-                        </div>
-                        <div class="info-item">
+                        </div>` : ''}
+                        ${registrationData.camera_doppia > 0 ? `<div class="info-item">
                             <div class="info-label">Camera Doppia</div>
                             <div class="info-value">${registrationData.camera_doppia}</div>
-                        </div>
-                        <div class="info-item">
+                        </div>` : ''}
+                        ${registrationData.camera_tripla > 0 ? `<div class="info-item">
                             <div class="info-label">Camera Tripla</div>
                             <div class="info-value">${registrationData.camera_tripla}</div>
-                        </div>
-                        <div class="info-item">
+                        </div>` : ''}
+                        ${registrationData.camera_quadrupla > 0 ? `<div class="info-item">
                             <div class="info-label">Camera Quadrupla</div>
                             <div class="info-value">${registrationData.camera_quadrupla}</div>
-                        </div>
+                        </div>` : ''}
                     </div>
                 </div>
 
@@ -230,49 +326,97 @@ function generateSummaryHTML(registrationData, partenzaText) {
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">Data di Nascita</div>
-                                    <div class="info-value">${ospite.data_nascita}</div>
+                                    <div class="info-value">${formatBirthDate(ospite.data_nascita)}</div>
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">Codice Fiscale</div>
-                                    <div class="info-value">${ospite.codice_fiscale}</div>
+                                    <div class="info-value">${ospite.codice_fiscale || '-'}</div>
                                 </div>
+                                <div class="info-item">
+                                    <div class="info-label">Luogo di Nascita</div>
+                                    <div class="info-value">${ospite.luogo_nascita || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Cittadinanza</div>
+                                    <div class="info-value">${ospite.cittadinanza || '-'}</div>
+                                </div>
+                                ${ospite.email ? `<div class="info-item">
+                                    <div class="info-label">Email</div>
+                                    <div class="info-value">${ospite.email}</div>
+                                </div>` : ''}
+                                ${ospite.cellulare ? `<div class="info-item">
+                                    <div class="info-label">Cellulare</div>
+                                    <div class="info-value">${ospite.cellulare}</div>
+                                </div>` : ''}
                                 <div class="info-item grid-full">
                                     <div class="info-label">Indirizzo</div>
-                                    <div class="info-value">${ospite.indirizzo}</div>
+                                    <div class="info-value">${ospite.indirizzo || '-'}</div>
                                 </div>
+                                ${ospite.esigenze_alimentari ? `<div class="info-item grid-full">
+                                    <div class="info-label">Esigenze Alimentari</div>
+                                    <div class="info-value">${ospite.esigenze_alimentari}</div>
+                                </div>` : ''}
                             </div>
                         </div>
                     `).join('')}
                 </div>
                 ` : ''}
 
-                ${registrationData.dati_fatturazione ? `
+                ${registrationData.dati_fatturazione && registrationData.dati_fatturazione.ragione_sociale ? `
                 <div class="section">
                     <div class="section-title">Dati Fatturazione Aziendale</div>
                     <div class="grid">
                         <div class="info-item">
                             <div class="info-label">Ragione Sociale</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.ragione_sociale}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.ragione_sociale || '-'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Partita IVA</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.partita_iva}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.partita_iva || '-'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">Codice Fiscale Azienda</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.codice_fiscale_azienda}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.codice_fiscale_azienda || '-'}</div>
                         </div>
                         <div class="info-item grid-full">
                             <div class="info-label">Indirizzo Sede Legale</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.indirizzo_sede_legale}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.indirizzo_sede_legale || '-'}</div>
                         </div>
+                        ${registrationData.dati_fatturazione.sede_via_e_numero_civico ? `<div class="info-item grid-full">
+                            <div class="info-label">Indirizzo Completo Sede</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.sede_via_e_numero_civico}, ${registrationData.dati_fatturazione.sede_cap} ${registrationData.dati_fatturazione.sede_citta}</div>
+                        </div>` : ''}
                         <div class="info-item">
                             <div class="info-label">Codice SDI</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.codice_sdi}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.codice_sdi || '-'}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">PEC Azienda</div>
-                            <div class="info-value">${registrationData.dati_fatturazione.pec_azienda}</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.pec_azienda || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${registrationData.dati_fatturazione && registrationData.dati_fatturazione.fattura_nome ? `
+                <div class="section">
+                    <div class="section-title">Dati Fatturazione Privata</div>
+                    <div class="grid">
+                        <div class="info-item">
+                            <div class="info-label">Nome</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.fattura_nome || '-'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Cognome</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.fattura_cognome || '-'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Codice Fiscale</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.fattura_codice_fiscale || '-'}</div>
+                        </div>
+                        <div class="info-item grid-full">
+                            <div class="info-label">Indirizzo Fatturazione</div>
+                            <div class="info-value">${registrationData.dati_fatturazione.fattura_via_e_numero_civico ? `${registrationData.dati_fatturazione.fattura_via_e_numero_civico}, ${registrationData.dati_fatturazione.fattura_cap} ${registrationData.dati_fatturazione.fattura_citta}` : registrationData.dati_fatturazione.indirizzo_residenza || '-'}</div>
                         </div>
                     </div>
                 </div>
@@ -364,7 +508,7 @@ module.exports = function(pool, instanceName, config) {
             
             // Get guests data
             const guestsQuery = `
-                SELECT nome, cognome, data_nascita, codice_fiscale, indirizzo
+                SELECT nome, cognome, data_nascita, codice_fiscale, indirizzo, luogo_nascita, cittadinanza
                 FROM accompagnatori_dettagli
                 WHERE registrazione_id = $1
                 ORDER BY id
@@ -387,19 +531,11 @@ module.exports = function(pool, instanceName, config) {
                 } : null
             };
             
-            // Map partenza to readable text
-            const partenzaMapping = {
-                'autonomo': 'Arrivo autonomo',
-                'fco': 'FCO - Roma Fiumicino',
-                'nap': 'NAP - Napoli',
-                'bcn': 'BCN - Barcellona',
-                'mpx': 'MXP - Malpensa'
-            };
-            const partenzaText = partenzaMapping[registration.partenza] || registration.partenza;
+
             
             try {
                 // Generate PDF
-                const pdfBuffer = await generateRegistrationPDF(registrationData, partenzaText, registration.evento);
+                const pdfBuffer = await generateRegistrationPDF(registrationData, registration.evento);
                 
                 // Set response headers for PDF download
                 const safeEventName = registration.evento.replace(/[^a-z0-9]/gi, '-').toLowerCase();
@@ -427,11 +563,13 @@ module.exports = function(pool, instanceName, config) {
     router.post('/api/registrati', async (req, res) => {
         log('DEBUG', `New registration for '${instanceName}'`, { body: req.body });
         const {
-            user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
-            partenza, evento,
+            user_id, nome, cognome, email, cellulare, data_nascita, 
+            via_e_numero_civico, cap, citta, provincia, indirizzo, 
+            codice_fiscale, luogo_nascita, cittadinanza, esigenze_alimentari, evento,
             camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
             costo_totale_gruppo,
             ospiti,
+            tipo_fatturazione,
             fatturazione_aziendale,
             dati_fatturazione,
             agente
@@ -462,17 +600,22 @@ module.exports = function(pool, instanceName, config) {
                 // Insert main registration
                 const mainInsertQuery = `
                     INSERT INTO registrazioni (
-                        user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
-                        partenza, evento, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
+                        user_id, nome, cognome, email, cellulare, data_nascita, 
+                        via_e_numero_civico, cap, citta, provincia, indirizzo, codice_fiscale,
+                        luogo_nascita, cittadinanza, esigenze_alimentari, evento, 
+                        camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
                         costo_totale_gruppo, data_iscrizione, fatturazione_aziendale, agente
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
                     RETURNING id
                 `;
                 
                 const mainInsertResult = await client.query(mainInsertQuery, [
-                    user_id, nome, cognome, email, cellulare, data_nascita, indirizzo, codice_fiscale,
-                    partenza, evento, camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
-                    costo_totale_gruppo, new Date().toISOString(), fatturazione_aziendale, agente
+                    user_id, nome, cognome, email, cellulare, data_nascita, 
+                    via_e_numero_civico, cap, citta, provincia, indirizzo, codice_fiscale,
+                    luogo_nascita, cittadinanza, esigenze_alimentari || '', evento, 
+                    camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
+                    costo_totale_gruppo, new Date().toISOString(), 
+                    tipo_fatturazione === 'azienda', agente
                 ]);
                 
                 const registrationId = mainInsertResult.rows[0].id;
@@ -481,30 +624,52 @@ module.exports = function(pool, instanceName, config) {
                 if (ospiti && ospiti.length > 0) {
                     const ospiteQuery = `
                         INSERT INTO accompagnatori_dettagli (
-                            registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale
-                        ) VALUES ($1, $2, $3, $4, $5, $6)
+                            registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale, 
+                            luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     `;
                     
                     for (const ospite of ospiti) {
                         await client.query(ospiteQuery, [
                             registrationId, ospite.nome, ospite.cognome, 
-                            ospite.data_nascita, ospite.indirizzo, ospite.codice_fiscale
+                            ospite.data_nascita, ospite.indirizzo, ospite.codice_fiscale,
+                            ospite.luogo_nascita, ospite.cittadinanza,
+                            ospite.email || null, ospite.cellulare || null, 
+                            ospite.esigenze_alimentari || ''
                         ]);
                     }
                 }
 
-                // Insert billing data if corporate billing
-                if (fatturazione_aziendale && dati_fatturazione) {
-                    await client.query(`
-                        INSERT INTO dati_fatturazione (
-                            registrazione_id, ragione_sociale, partita_iva, codice_fiscale_azienda,
-                            indirizzo_sede_legale, codice_sdi, pec_azienda
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    `, [
-                        registrationId, dati_fatturazione.ragione_sociale, dati_fatturazione.partita_iva,
-                        dati_fatturazione.codice_fiscale_azienda, dati_fatturazione.indirizzo_sede_legale,
-                        dati_fatturazione.codice_sdi, dati_fatturazione.pec_azienda
-                    ]);
+                // Insert billing data (both corporate and private)
+                if (dati_fatturazione) {
+                    if (tipo_fatturazione === 'azienda') {
+                        // Corporate billing
+                        await client.query(`
+                            INSERT INTO dati_fatturazione (
+                                registrazione_id, ragione_sociale, partita_iva, codice_fiscale_azienda,
+                                indirizzo_sede_legale, sede_via_e_numero_civico, sede_cap, sede_citta,
+                                codice_sdi, pec_azienda
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        `, [
+                            registrationId, dati_fatturazione.ragione_sociale, dati_fatturazione.partita_iva,
+                            dati_fatturazione.codice_fiscale_azienda, dati_fatturazione.indirizzo_sede_legale,
+                            dati_fatturazione.sede_via_e_numero_civico, dati_fatturazione.sede_cap, 
+                            dati_fatturazione.sede_citta, dati_fatturazione.codice_sdi, dati_fatturazione.pec_azienda
+                        ]);
+                    } else {
+                        // Private billing
+                        await client.query(`
+                            INSERT INTO dati_fatturazione (
+                                registrazione_id, fattura_nome, fattura_cognome, fattura_codice_fiscale,
+                                fattura_via_e_numero_civico, fattura_cap, fattura_citta, indirizzo_residenza
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        `, [
+                            registrationId, dati_fatturazione.nome, dati_fatturazione.cognome,
+                            dati_fatturazione.codice_fiscale, dati_fatturazione.fattura_via_e_numero_civico,
+                            dati_fatturazione.fattura_cap, dati_fatturazione.fattura_citta,
+                            dati_fatturazione.indirizzo_residenza
+                        ]);
+                    }
                 }
 
                 await client.query('COMMIT');
@@ -518,12 +683,40 @@ module.exports = function(pool, instanceName, config) {
 
                 // Send confirmation email
                 try {
-                    const emailContent = generateSummaryHTML({
+                    // Prepare email data with proper billing structure
+                    const emailData = {
                         ...req.body,
                         id: registrationId,
                         data_iscrizione: new Date().toISOString(),
                         ospiti: ospiti || []
-                    }, partenza);
+                    };
+                    
+                    // Add structured billing data based on billing type
+                    if (tipo_fatturazione === 'azienda' && dati_fatturazione) {
+                        emailData.dati_fatturazione = {
+                            ragione_sociale: dati_fatturazione.ragione_sociale,
+                            partita_iva: dati_fatturazione.partita_iva,
+                            codice_fiscale_azienda: dati_fatturazione.codice_fiscale_azienda,
+                            indirizzo_sede_legale: dati_fatturazione.indirizzo_sede_legale,
+                            sede_via_e_numero_civico: dati_fatturazione.sede_via_e_numero_civico,
+                            sede_cap: dati_fatturazione.sede_cap,
+                            sede_citta: dati_fatturazione.sede_citta,
+                            codice_sdi: dati_fatturazione.codice_sdi,
+                            pec_azienda: dati_fatturazione.pec_azienda
+                        };
+                    } else if (tipo_fatturazione === 'privato' && dati_fatturazione) {
+                        emailData.dati_fatturazione = {
+                            fattura_nome: dati_fatturazione.nome,
+                            fattura_cognome: dati_fatturazione.cognome,
+                            fattura_codice_fiscale: dati_fatturazione.codice_fiscale,
+                            fattura_via_e_numero_civico: dati_fatturazione.fattura_via_e_numero_civico,
+                            fattura_cap: dati_fatturazione.fattura_cap,
+                            fattura_citta: dati_fatturazione.fattura_citta,
+                            indirizzo_residenza: dati_fatturazione.indirizzo_residenza
+                        };
+                    }
+
+                    const emailContent = generateSummaryHTML(emailData);
 
                     await sendMail(email, `Conferma Iscrizione - ${evento}`, emailContent);
 
@@ -586,26 +779,34 @@ module.exports = function(pool, instanceName, config) {
             const query = `
                 SELECT 
                     r.id, r.nome, r.cognome, r.email, r.cellulare, r.data_nascita, 
-                    r.indirizzo, r.codice_fiscale, r.partenza, r.evento, 
+                    r.via_e_numero_civico, r.cap, r.citta, r.provincia, r.indirizzo, 
+                    r.codice_fiscale, r.luogo_nascita, r.cittadinanza, r.esigenze_alimentari, r.evento, 
                     r.camera_singola, r.camera_doppia, r.camera_tripla, r.camera_quadrupla,
-                    r.costo_totale_gruppo, r.data_iscrizione, r.fatturazione_aziendale,
+                    r.costo_totale_gruppo, r.data_iscrizione, r.fatturazione_aziendale, r.agente,
                     'Capogruppo' as tipo_persona, r.id as registrazione_id,
                     df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-                    df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+                    df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                    df.codice_sdi, df.pec_azienda,
+                    df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                    df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
                 FROM registrazioni r
                 LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
                 
                 UNION ALL
                 
                 SELECT 
-                    ad.id, ad.nome, ad.cognome, NULL as email, NULL as cellulare, 
-                    ad.data_nascita, ad.indirizzo, ad.codice_fiscale, 
-                    NULL as partenza, r.evento,
+                    ad.id, ad.nome, ad.cognome, ad.email, ad.cellulare, 
+                    ad.data_nascita, NULL as via_e_numero_civico, NULL as cap, NULL as citta, NULL as provincia,
+                    ad.indirizzo, ad.codice_fiscale, ad.luogo_nascita, ad.cittadinanza, ad.esigenze_alimentari,
+                    r.evento,
                     0 as camera_singola, 0 as camera_doppia, 0 as camera_tripla, 0 as camera_quadrupla,
-                    0 as costo_totale_gruppo, NULL as data_iscrizione, false as fatturazione_aziendale,
+                    0 as costo_totale_gruppo, NULL as data_iscrizione, false as fatturazione_aziendale, NULL as agente,
                     'Ospite' as tipo_persona, ad.registrazione_id,
                     NULL as ragione_sociale, NULL as partita_iva, NULL as codice_fiscale_azienda,
-                    NULL as indirizzo_sede_legale, NULL as codice_sdi, NULL as pec_azienda
+                    NULL as indirizzo_sede_legale, NULL as sede_via_e_numero_civico, NULL as sede_cap, NULL as sede_citta,
+                    NULL as codice_sdi, NULL as pec_azienda,
+                    NULL as fattura_nome, NULL as fattura_cognome, NULL as fattura_codice_fiscale,
+                    NULL as fattura_via_e_numero_civico, NULL as fattura_cap, NULL as fattura_citta, NULL as indirizzo_residenza
                 FROM accompagnatori_dettagli ad
                 JOIN registrazioni r ON ad.registrazione_id = r.id
                 
@@ -621,31 +822,38 @@ module.exports = function(pool, instanceName, config) {
         }
     });
 
-    // Add the export route that admin dashboard expects
-    router.get('/api/export', async (req, res) => {
-        try {
-            const registrationQuery = `
-                SELECT 
-                    r.*, 
-                    COUNT(a.id) as num_accompagnatori,
-                    df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-                    df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
-                FROM registrazioni r
-                LEFT JOIN accompagnatori_dettagli a ON r.id = a.registrazione_id
-                LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
-                GROUP BY r.id, df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-                         df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
-                ORDER BY r.data_iscrizione DESC
-            `;
-            
-            const registrationsResult = await pool.query(registrationQuery);
-            const registrations = registrationsResult.rows;
+            // Add the export route that admin dashboard expects
+        router.get('/api/export', async (req, res) => {
+            try {
+                const registrationQuery = `
+                    SELECT 
+                        r.*, 
+                        COUNT(a.id) as num_accompagnatori,
+                        df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                        df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                        df.codice_sdi, df.pec_azienda,
+                        df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                        df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
+                    FROM registrazioni r
+                    LEFT JOIN accompagnatori_dettagli a ON r.id = a.registrazione_id
+                    LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
+                    GROUP BY r.id, df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                             df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                             df.codice_sdi, df.pec_azienda,
+                             df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                             df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
+                    ORDER BY r.data_iscrizione DESC
+                `;
+                
+                const registrationsResult = await pool.query(registrationQuery);
+                const registrations = registrationsResult.rows;
 
-            const guestsQuery = `
-                SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo
-                FROM accompagnatori_dettagli
-                ORDER BY registrazione_id, id
-            `;
+                const guestsQuery = `
+                    SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo,
+                           luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
+                    FROM accompagnatori_dettagli
+                    ORDER BY registrazione_id, id
+                `;
             
             const guestsResult = await pool.query(guestsQuery);
             const guests = guestsResult.rows;
@@ -660,7 +868,7 @@ module.exports = function(pool, instanceName, config) {
             }, {});
 
             // Generate CSV content
-            let csvContent = 'ID,User ID,Nome,Cognome,Email,Cellulare,Data Nascita,Indirizzo,Codice Fiscale,Partenza,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Fatturazione Aziendale,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Numero Accompagnatori,Accompagnatori\n';
+            let csvContent = 'ID,User ID,Nome,Cognome,Email,Cellulare,Data Nascita,Via e Numero,CAP,Città,Provincia,Indirizzo,Codice Fiscale,Luogo Nascita,Cittadinanza,Esigenze Alimentari,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Agente,Fatturazione Aziendale,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Fattura Nome,Fattura Cognome,Fattura CF,Fattura Indirizzo,Numero Accompagnatori,Accompagnatori\n';
 
             registrations.forEach(reg => {
                 const ospiti = guestsByRegistration[reg.id] || [];
@@ -674,9 +882,15 @@ module.exports = function(pool, instanceName, config) {
                     `"${reg.email}"`,
                     `"${reg.cellulare}"`,
                     `"${reg.data_nascita}"`,
-                    `"${reg.indirizzo}"`,
+                    `"${reg.via_e_numero_civico || ''}"`,
+                    `"${reg.cap || ''}"`,
+                    `"${reg.citta || ''}"`,
+                    `"${reg.provincia || ''}"`,
+                    `"${reg.indirizzo || ''}"`,
                     `"${reg.codice_fiscale}"`,
-                    reg.partenza,
+                    `"${reg.luogo_nascita || ''}"`,
+                    `"${reg.cittadinanza || ''}"`,
+                    `"${reg.esigenze_alimentari || ''}"`,
                     reg.camera_singola,
                     reg.camera_doppia,
                     reg.camera_tripla,
@@ -684,6 +898,7 @@ module.exports = function(pool, instanceName, config) {
                     reg.costo_totale_gruppo,
                     `"${reg.evento}"`,
                     reg.data_iscrizione,
+                    `"${reg.agente || ''}"`,
                     reg.fatturazione_aziendale ? 'Sì' : 'No',
                     `"${reg.ragione_sociale || ''}"`,
                     `"${reg.partita_iva || ''}"`,
@@ -691,6 +906,10 @@ module.exports = function(pool, instanceName, config) {
                     `"${reg.indirizzo_sede_legale || ''}"`,
                     `"${reg.codice_sdi || ''}"`,
                     `"${reg.pec_azienda || ''}"`,
+                    `"${reg.fattura_nome || ''}"`,
+                    `"${reg.fattura_cognome || ''}"`,
+                    `"${reg.fattura_codice_fiscale || ''}"`,
+                    `"${reg.fattura_via_e_numero_civico || ''} ${reg.fattura_cap || ''} ${reg.fattura_citta || ''}"`,
                     reg.num_accompagnatori,
                     `"${ospitiString}"`
                 ].join(',');
@@ -719,11 +938,19 @@ module.exports = function(pool, instanceName, config) {
                 SELECT 
                     r.*, 
                     COUNT(a.id) as num_accompagnatori,
-                    df.ragione_sociale, df.partita_iva
+                    df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                    df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                    df.codice_sdi, df.pec_azienda,
+                    df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                    df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
                 FROM registrazioni r
                 LEFT JOIN accompagnatori_dettagli a ON r.id = a.registrazione_id
                 LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
-                GROUP BY r.id, df.ragione_sociale, df.partita_iva
+                GROUP BY r.id, df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
+                         df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                         df.codice_sdi, df.pec_azienda,
+                         df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                         df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
                 ORDER BY r.data_iscrizione DESC
             `;
             
@@ -732,7 +959,8 @@ module.exports = function(pool, instanceName, config) {
 
             // Get guests for each registration
             const guestsQuery = `
-                SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo
+                SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo,
+                       luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
                 FROM accompagnatori_dettagli
                 ORDER BY registrazione_id, id
             `;
@@ -778,12 +1006,18 @@ module.exports = function(pool, instanceName, config) {
                     r.*, 
                     COUNT(a.id) as num_accompagnatori,
                     df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-                    df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+                    df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                    df.codice_sdi, df.pec_azienda,
+                    df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                    df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
                 FROM registrazioni r
                 LEFT JOIN accompagnatori_dettagli a ON r.id = a.registrazione_id
                 LEFT JOIN dati_fatturazione df ON r.id = df.registrazione_id
                 GROUP BY r.id, df.ragione_sociale, df.partita_iva, df.codice_fiscale_azienda,
-                         df.indirizzo_sede_legale, df.codice_sdi, df.pec_azienda
+                         df.indirizzo_sede_legale, df.sede_via_e_numero_civico, df.sede_cap, df.sede_citta,
+                         df.codice_sdi, df.pec_azienda,
+                         df.fattura_nome, df.fattura_cognome, df.fattura_codice_fiscale,
+                         df.fattura_via_e_numero_civico, df.fattura_cap, df.fattura_citta, df.indirizzo_residenza
                 ORDER BY r.data_iscrizione DESC
             `;
             
@@ -791,7 +1025,8 @@ module.exports = function(pool, instanceName, config) {
             const registrations = registrationsResult.rows;
 
             const guestsQuery = `
-                SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo
+                SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo, 
+                       luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
                 FROM accompagnatori_dettagli
                 ORDER BY registrazione_id, id
             `;
@@ -809,7 +1044,7 @@ module.exports = function(pool, instanceName, config) {
             }, {});
 
             // Generate CSV content
-            let csvContent = 'ID,User ID,Nome,Cognome,Email,Cellulare,Data Nascita,Indirizzo,Codice Fiscale,Partenza,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Fatturazione Aziendale,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Numero Accompagnatori,Accompagnatori\n';
+            let csvContent = 'ID,User ID,Nome,Cognome,Email,Cellulare,Data Nascita,Via e Numero,CAP,Città,Provincia,Indirizzo,Codice Fiscale,Luogo Nascita,Cittadinanza,Esigenze Alimentari,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Agente,Fatturazione Aziendale,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Fattura Nome,Fattura Cognome,Fattura CF,Fattura Indirizzo,Numero Accompagnatori,Accompagnatori\n';
 
             registrations.forEach(reg => {
                 const ospiti = guestsByRegistration[reg.id] || [];
@@ -823,9 +1058,15 @@ module.exports = function(pool, instanceName, config) {
                     `"${reg.email}"`,
                     `"${reg.cellulare}"`,
                     `"${reg.data_nascita}"`,
-                    `"${reg.indirizzo}"`,
+                    `"${reg.via_e_numero_civico || ''}"`,
+                    `"${reg.cap || ''}"`,
+                    `"${reg.citta || ''}"`,
+                    `"${reg.provincia || ''}"`,
+                    `"${reg.indirizzo || ''}"`,
                     `"${reg.codice_fiscale}"`,
-                    reg.partenza,
+                    `"${reg.luogo_nascita || ''}"`,
+                    `"${reg.cittadinanza || ''}"`,
+                    `"${reg.esigenze_alimentari || ''}"`,
                     reg.camera_singola,
                     reg.camera_doppia,
                     reg.camera_tripla,
@@ -833,6 +1074,7 @@ module.exports = function(pool, instanceName, config) {
                     reg.costo_totale_gruppo,
                     `"${reg.evento}"`,
                     reg.data_iscrizione,
+                    `"${reg.agente || ''}"`,
                     reg.fatturazione_aziendale ? 'Sì' : 'No',
                     `"${reg.ragione_sociale || ''}"`,
                     `"${reg.partita_iva || ''}"`,
@@ -840,6 +1082,10 @@ module.exports = function(pool, instanceName, config) {
                     `"${reg.indirizzo_sede_legale || ''}"`,
                     `"${reg.codice_sdi || ''}"`,
                     `"${reg.pec_azienda || ''}"`,
+                    `"${reg.fattura_nome || ''}"`,
+                    `"${reg.fattura_cognome || ''}"`,
+                    `"${reg.fattura_codice_fiscale || ''}"`,
+                    `"${reg.fattura_via_e_numero_civico || ''} ${reg.fattura_cap || ''} ${reg.fattura_citta || ''}"`,
                     reg.num_accompagnatori,
                     `"${ospitiString}"`
                 ].join(',');

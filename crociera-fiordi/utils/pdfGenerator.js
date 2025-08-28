@@ -1,11 +1,12 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
+const path = require('path');
 
 /**
  * Generate PDF from registration data using PDFKit with room grouping
  * This replaces html-pdf-node which had Puppeteer/Chrome dependencies
  */
-async function generateRegistrationPDF(registrationData, partenzaText, eventName) {
+async function generateRegistrationPDF(registrationData, eventName) {
     return new Promise((resolve, reject) => {
         try {
             // Create a new PDF document
@@ -20,7 +21,41 @@ async function generateRegistrationPDF(registrationData, partenzaText, eventName
             doc.on('end', () => resolve(Buffer.concat(chunks)));
             doc.on('error', reject);
 
-            // Header
+            // Header with logos
+            try {
+                const logoPath = path.join(__dirname, '..', 'assets', 'mae-logo.png');
+                const lafeniceLogoPath = path.join(__dirname, '..', 'assets', 'lafenice-logo.jpg');
+                
+                if (fs.existsSync(logoPath) && fs.existsSync(lafeniceLogoPath)) {
+                    const pageWidth = doc.page.width;
+                    const logoWidth = 80;
+                    const logoHeight = 60;
+                    const spacing = 50;
+                    const totalLogosWidth = (logoWidth * 2) + spacing;
+                    const startX = (pageWidth - totalLogosWidth) / 2;
+                    
+                    // Mae logo on the left
+                    doc.image(logoPath, startX, doc.y, {
+                        width: logoWidth,
+                        height: logoHeight,
+                        fit: [logoWidth, logoHeight]
+                    });
+                    
+                    // La Fenice logo on the right
+                    doc.image(lafeniceLogoPath, startX + logoWidth + spacing, doc.y, {
+                        width: logoWidth,
+                        height: logoHeight,
+                        fit: [logoWidth, logoHeight]
+                    });
+                    
+                    // Move down to accommodate logos
+                    doc.y += logoHeight + 20;
+                }
+            } catch (logoError) {
+                // If logos fail to load, continue without them
+                console.warn('Could not load logos for PDF:', logoError.message);
+            }
+
             doc.fontSize(20)
                .font('Helvetica-Bold')
                .text('RIEPILOGO ISCRIZIONE', { align: 'center' })
@@ -44,9 +79,7 @@ async function generateRegistrationPDF(registrationData, partenzaText, eventName
                 doc.text(`ID Utente: ${registrationData.user_id}`);
             }
             
-            if (partenzaText) {
-                doc.text(`Partenza: ${partenzaText}`);
-            }
+
 
             if (registrationData.costo_totale_gruppo !== undefined) {
                 doc.fontSize(14)
