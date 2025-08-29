@@ -225,6 +225,14 @@
             <label class="block mb-0.5 font-medium text-sm">Partita IVA *</label>
             <input type="text" name="partita_iva" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[0-9]{11}" title="Inserire 11 cifre" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
           </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">Codice SDI *</label>
+            <input type="text" name="codice_sdi" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" pattern="[A-Za-z0-9]{7}" title="Inserire codice alfanumerico di 7 caratteri" maxlength="7" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');">
+          </div>
+          <div>
+            <label class="block mb-0.5 font-medium text-sm">PEC Aziendale *</label>
+            <input type="email" name="pec_azienda" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" title="Inserire indirizzo PEC valido">
+          </div>
           
           <!-- Address Fields for Company Billing -->
           <div class="md:col-span-2 font-medium text-sm mb-0.5 mt-2">Indirizzo della Sede Legale *</div>
@@ -288,10 +296,9 @@
           
           <div class="bg-white p-4 rounded border border-gray-300">
             <p class="font-semibold text-gray-800 mb-2">INTESA SAN PAOLO Spa - Fil. Porto d'Ascoli</p>
-            <p class="mb-1">Via Filippo Turati, 46 – 63074 San Benedetto del Tronto (Ascoli Piceno)</p>
             <br>
             <p class="mb-1"><strong>IBAN:</strong> IT79I0306924419100000002738</p>
-            <p class="mb-1"><strong>Intestato a:</strong> LE MONDE S.r.l. Via Liberazione, 150 - San Benedetto del Tronto (AP)</p>
+            <p class="mb-1"><strong>Intestato a:</strong> LE MONDE S.r.l. - Via Liberazione, 150 - San Benedetto del Tronto (AP)</p>
             <p class="mb-1"><strong>PARTITA IVA/CODICE FISCALE:</strong> 01681040448</p>
             <p class="mb-1"><strong>COD. IDENTIFICATIVO:</strong> 0000000</p>
             <p class="mb-1"><strong>PEC:</strong> MAEGROUP@TDPEC.IT</p>
@@ -522,6 +529,8 @@
             dati_fatturazione: data.tipo_fatturazione === 'azienda' ? {
                 ragione_sociale: data.ragione_sociale, 
                 partita_iva: data.partita_iva,
+                codice_sdi: data.codice_sdi,
+                pec_azienda: data.pec_azienda,
                 indirizzo_sede_legale: data.sede_via_e_numero_civico ? `${data.sede_via_e_numero_civico}, ${data.sede_cap} ${data.sede_citta}` : ''
             } : {
                 nome: data.fattura_nome,

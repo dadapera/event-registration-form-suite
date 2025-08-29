@@ -178,7 +178,7 @@
               <th class="px-2 py-2 border-b text-left">Camere</th>
               <th class="px-2 py-2 border-b text-left">Costo (€)</th>
               <th class="px-2 py-2 border-b text-left">Accompagnatori</th>
-              <th class="px-2 py-2 border-b text-left">Fatt. Aziendale</th>
+              <th class="px-2 py-2 border-b text-left">Fatturazione</th>
               <th class="px-2 py-2 border-b text-left">Data Iscrizione</th>
             </tr>
           </thead>
@@ -239,9 +239,11 @@
         // Billing info
         table += '<td class="px-2 py-1 border-b">';
         if (reg.fatturazione_aziendale) {
-          table += `Sì<br><div class="max-w-xs whitespace-pre-wrap text-xs">RS: ${reg.ragione_sociale || '-'}<br>PIVA: ${reg.partita_iva || '-'}<br>CF Az: ${reg.codice_fiscale_azienda || '-'}<br>Sede: ${reg.indirizzo_sede_legale || '-'}<br>SDI: ${reg.codice_sdi || '-'}<br>PEC: ${reg.pec_azienda || '-'}</div>`;
+                     table += `<div class="max-w-xs whitespace-pre-wrap text-xs">RS: ${reg.ragione_sociale || '-'}<br>PIVA: ${reg.partita_iva || '-'}<br>Sede: ${reg.indirizzo_sede_legale || '-'}<br>SDI: ${reg.codice_sdi || '-'}<br>PEC: ${reg.pec_azienda || '-'}</div>`;
+        } else if (reg.fattura_nome || reg.fattura_cognome || reg.fattura_codice_fiscale) {
+          table += `<div class="max-w-xs whitespace-pre-wrap text-xs">Nome: ${reg.fattura_nome || '-'}<br>Cognome: ${reg.fattura_cognome || '-'}<br>CF: ${reg.fattura_codice_fiscale || '-'}<br>Indirizzo: ${reg.fattura_via_e_numero_civico || '-'}<br>CAP: ${reg.fattura_cap || '-'}<br>Città: ${reg.fattura_citta || '-'}</div>`;
         } else {
-          table += 'No';
+          table += '-';
         }
         table += '</td>';
         
