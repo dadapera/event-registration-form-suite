@@ -5,6 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Registrazioni</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .table-fixed {
+      table-layout: fixed;
+    }
+    
+    .table-fixed th,
+    .table-fixed td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .table-fixed td {
+      vertical-align: top;
+    }
+    
+    /* Allow text wrapping for specific columns that need it */
+    .table-fixed td:nth-child(3), /* Dati Anagrafici */
+    .table-fixed td:nth-child(4), /* Contatti */
+    .table-fixed td:nth-child(9) { /* Fatturazione */
+      white-space: normal;
+      word-wrap: break-word;
+    }
+    
+    /* Ensure consistent padding and alignment */
+    .guest-row td {
+      padding: 0.25rem 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    /* Smooth transition for expand/collapse */
+    .guest-row {
+      transition: all 0.2s ease-in-out;
+    }
+    
+    /* Fixed column widths to prevent shifting */
+    .table-fixed th:nth-child(1), .table-fixed td:nth-child(1) { width: 80px; }  /* ID */
+    .table-fixed th:nth-child(2), .table-fixed td:nth-child(2) { width: 160px; } /* Nome */
+    .table-fixed th:nth-child(3), .table-fixed td:nth-child(3) { width: 200px; } /* Dati Anagrafici */
+    .table-fixed th:nth-child(4), .table-fixed td:nth-child(4) { width: 200px; } /* Contatti */
+    .table-fixed th:nth-child(5), .table-fixed td:nth-child(5) { width: 160px; } /* Agente */
+    .table-fixed th:nth-child(6), .table-fixed td:nth-child(6) { width: 120px; } /* Camere */
+    .table-fixed th:nth-child(7), .table-fixed td:nth-child(7) { width: 120px; } /* Costo */
+    .table-fixed th:nth-child(8), .table-fixed td:nth-child(8) { width: 120px; } /* Accompagnatori */
+    .table-fixed th:nth-child(9), .table-fixed td:nth-child(9) { width: 240px; } /* Fatturazione */
+    .table-fixed th:nth-child(10), .table-fixed td:nth-child(10) { width: 160px; } /* Data Iscrizione */
+    
+    /* Ensure consistent cell content alignment */
+    .table-fixed td {
+      padding: 0.25rem 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    /* Prevent text overflow in cells */
+    .table-fixed td > div {
+      max-width: 100%;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body class="bg-gray-100">
   <div class="max-w-7xl mx-auto p-6">
@@ -167,7 +226,7 @@
       
       // Create registration table
       let table = `
-        <table class="min-w-full bg-white border border-gray-300">
+        <table class="min-w-full bg-white border border-gray-300 table-fixed">
           <thead class="bg-gray-50">
             <tr>
                              <th class="px-2 py-2 border-b text-left">ID</th>
@@ -205,12 +264,7 @@
         }
                  table += `${reg.id}</td>`;
          table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
-         // Construct address display
-         const addressDisplay = reg.via_e_numero_civico 
-           ? `${reg.via_e_numero_civico}, ${reg.cap || ''} ${reg.citta || ''}, ${reg.provincia || ''}`
-           : (reg.indirizzo || '-');
-         
-         table += `<td class="px-2 py-1 border-b">Nato: ${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Luogo: ${reg.luogo_nascita || '-'}<br>Cittad.: ${reg.cittadinanza || '-'}<br>Ind: ${addressDisplay}<br>CF: ${reg.codice_fiscale || '-'}${reg.esigenze_alimentari ? `<br>Diet: ${reg.esigenze_alimentari}` : ''}</td>`;
+         table += `<td class="px-2 py-1 border-b">${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${reg.luogo_nascita || '-'}<br>${reg.cittadinanza || '-'}${reg.esigenze_alimentari ? `<br>${reg.esigenze_alimentari}` : ''}</td>`;
          table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
         table += `<td class="px-2 py-1 border-b">${reg.agente || '-'}</td>`;
         
@@ -257,9 +311,9 @@
         // Add guest rows (initially hidden)
         group.guests.forEach((guest, guestIndex) => {
           table += `<tr class="guest-row guest-${reg.id} bg-blue-25 hidden">`;
-                     table += `<td class="px-2 py-1 border-b pl-8 text-sm text-gray-600">Ospite ${guestIndex + 1}</td>`;
+                     table += `<td class="px-2 py-1 border-b pl-8 text-sm text-gray-600">${guestIndex + 1}</td>`;
            table += `<td class="px-2 py-1 border-b font-medium text-sm">${guest.nome} ${guest.cognome}</td>`;
-           table += `<td class="px-2 py-1 border-b text-sm">Nato: ${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>Luogo: ${guest.luogo_nascita || '-'}<br>Cittad.: ${guest.cittadinanza || '-'}<br>Ind: ${guest.indirizzo || '-'}<br>CF: ${guest.codice_fiscale || '-'}${guest.esigenze_alimentari ? `<br>Diet: ${guest.esigenze_alimentari}` : ''}</td>`;
+           table += `<td class="px-2 py-1 border-b text-sm">${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${guest.luogo_nascita || '-'}<br>${guest.cittadinanza || '-'}${guest.esigenze_alimentari ? `<br>${guest.esigenze_alimentari}` : ''}</td>`;
            table += `<td class="px-2 py-1 border-b text-sm">${guest.email ? `${guest.email}<br>${guest.cellulare || ''}` : '-'}</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
@@ -285,7 +339,7 @@
       guestRows.forEach(row => {
         if (row.classList.contains('hidden')) {
           row.classList.remove('hidden');
-          expandIcon.textContent = '▼';
+          expandIcon.textContent = '🔽';
         } else {
           row.classList.add('hidden');
           expandIcon.textContent = '▶';
