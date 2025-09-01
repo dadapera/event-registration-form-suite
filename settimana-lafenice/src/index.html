@@ -501,11 +501,16 @@
                 partita_iva: data.partita_iva,
                 codice_sdi: data.codice_sdi,
                 pec_azienda: data.pec_azienda,
-                indirizzo_sede_legale: data.sede_via_e_numero_civico ? `${data.sede_via_e_numero_civico}, ${data.sede_cap} ${data.sede_citta}` : ''
+                sede_via_e_numero_civico: data.sede_via_e_numero_civico,
+                sede_cap: data.sede_cap,
+                sede_citta: data.sede_citta
             } : {
                 nome: data.fattura_nome,
                 cognome: data.fattura_cognome,
                 codice_fiscale: data.fattura_codice_fiscale,
+                fattura_via_e_numero_civico: data.fattura_via_e_numero_civico,
+                fattura_cap: data.fattura_cap,
+                fattura_citta: data.fattura_citta,
                 indirizzo_residenza: data.fattura_via_e_numero_civico ? `${data.fattura_via_e_numero_civico}, ${data.fattura_cap} ${data.fattura_citta}` : ''
             }
         };
