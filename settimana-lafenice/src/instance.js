@@ -222,6 +222,45 @@ function generateSummaryHTML(registrationData) {
                     font-weight: bold;
                     color: #1e40af;
                 }
+                .payment-section {
+                    background: #fef3c7;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-top: 20px;
+                    border: 1px solid #f59e0b;
+                }
+                .payment-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #92400e;
+                    margin-bottom: 15px;
+                    text-align: center;
+                }
+                .payment-info {
+                    background: white;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin-bottom: 15px;
+                    border: 1px solid #d1d5db;
+                }
+                .bank-details {
+                    background: white;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border: 1px solid #d1d5db;
+                    font-family: monospace;
+                    font-size: 14px;
+                }
+                .bank-details p {
+                    margin: 5px 0;
+                }
+                .contact-info {
+                    background: #dbeafe;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border: 1px solid #3b82f6;
+                    margin-top: 15px;
+                }
                 .footer {
                     margin-top: 40px;
                     text-align: center;
@@ -264,14 +303,6 @@ function generateSummaryHTML(registrationData) {
                             <div class="info-value">${formatBirthDate(registrationData.data_nascita)}</div>
                         </div>
                         <div class="info-item">
-                            <div class="info-label">Indirizzo</div>
-                            <div class="info-value">${registrationData.via_e_numero_civico ? `${registrationData.via_e_numero_civico}, ${registrationData.cap} ${registrationData.citta}, ${registrationData.provincia}` : registrationData.indirizzo}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Codice Fiscale</div>
-                            <div class="info-value">${registrationData.codice_fiscale}</div>
-                        </div>
-                        <div class="info-item">
                             <div class="info-label">Luogo di Nascita</div>
                             <div class="info-value">${registrationData.luogo_nascita || '-'}</div>
                         </div>
@@ -311,10 +342,10 @@ function generateSummaryHTML(registrationData) {
 
                 ${registrationData.ospiti && registrationData.ospiti.length > 0 ? `
                 <div class="section">
-                    <div class="section-title">Accompagnatori (${registrationData.ospiti.length})</div>
+                    <div class="section-title">Ospiti (${registrationData.ospiti.length})</div>
                     ${registrationData.ospiti.map((ospite, index) => `
                         <div class="guest-block">
-                            <div class="guest-title">Accompagnatore ${index + 1}</div>
+                            <div class="guest-title">Ospite ${index + 1}</div>
                             <div class="guest-info">
                                 <div class="info-item">
                                     <div class="info-label">Nome</div>
@@ -327,10 +358,6 @@ function generateSummaryHTML(registrationData) {
                                 <div class="info-item">
                                     <div class="info-label">Data di Nascita</div>
                                     <div class="info-value">${formatBirthDate(ospite.data_nascita)}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Codice Fiscale</div>
-                                    <div class="info-value">${ospite.codice_fiscale || '-'}</div>
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">Luogo di Nascita</div>
@@ -348,10 +375,6 @@ function generateSummaryHTML(registrationData) {
                                     <div class="info-label">Cellulare</div>
                                     <div class="info-value">${ospite.cellulare}</div>
                                 </div>` : ''}
-                                <div class="info-item grid-full">
-                                    <div class="info-label">Indirizzo</div>
-                                    <div class="info-value">${ospite.indirizzo || '-'}</div>
-                                </div>
                                 ${ospite.esigenze_alimentari ? `<div class="info-item grid-full">
                                     <div class="info-label">Esigenze Alimentari</div>
                                     <div class="info-value">${ospite.esigenze_alimentari}</div>
@@ -409,6 +432,44 @@ function generateSummaryHTML(registrationData) {
                 <div class="total-section">
                     <div class="info-label">Costo Totale Gruppo</div>
                     <div class="total-amount">€ ${registrationData.costo_totale_gruppo}</div>
+                </div>
+
+                <div class="payment-section">
+                    <div class="payment-title">MODALITÀ DI PAGAMENTO</div>
+                    
+                    <div class="payment-info">
+                        <p style="color: #dc2626; font-weight: bold;">
+                            Il mancato pagamento entro i termini indicati comporta l'annullamento della prenotazione.
+                        </p>
+                    </div>
+
+                    <div class="payment-info">
+                        <p>
+                            E' necessario procedere con il pagamento della quota entro <strong>7 giorni lavorativi</strong>. 
+                            Il pagamento dell'intera quota è obbligatorio per la conferma della prenotazione della vacanza.
+                        </p>
+                        
+                        <p>
+                            Il pagamento della quota dovrà essere effettuato a mezzo <strong>bonifico bancario</strong> alle seguenti coordinate:
+                        </p>
+                    </div>
+                    
+                    <div class="bank-details">
+                        <p><strong>INTESA SAN PAOLO Spa - Fil. Porto d'Ascoli</strong></p>
+                        <p><strong>IBAN:</strong> IT79I0306924419100000002738</p>
+                        <p><strong>Intestato a:</strong> LE MONDE S.r.l. - Via Liberazione, 150 - San Benedetto del Tronto (AP)</p>
+                        <p><strong>PARTITA IVA/CODICE FISCALE:</strong> 01681040448</p>
+                        <p><strong>COD. IDENTIFICATIVO:</strong> 0000000</p>
+                        <p><strong>PEC:</strong> MAEGROUP@TDPEC.IT</p>
+                        <p><strong>CAUSALE:</strong> Viaggio incentive Settimana Bianca 2026 Lafenice + Nome Partecipante + Ragione Sociale</p>
+                    </div>
+                    
+                    <div class="contact-info">
+                        <p style="font-weight: bold; color: #1e40af; margin-bottom: 10px;">Per maggiori informazioni sul viaggio potete contattare MAE' VIAGGI</p>
+                        <p><strong>Stefania Luciani</strong></p>
+                        <p><strong>Cell.:</strong> 342 6481218</p>
+                        <p><strong>Email:</strong> stefania.luciani@maeviaggi.it</p>
+                    </div>
                 </div>
 
                 <div class="footer">

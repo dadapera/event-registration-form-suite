@@ -91,7 +91,7 @@
           </div>
           <div class="w-full">
             <label class="block mb-0.5 font-medium text-sm">Cellulare *</label>
-            <input type="tel" name="cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{10}" maxlength="10" title="Inserire un numero di 10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <input type="tel" name="cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{9,10}" maxlength="10" title="Inserire un numero di 9-10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
           </div>
 
           <!-- Contact Information Notice -->
@@ -241,7 +241,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
             <p><strong>Numero Totale Persone:</strong> <span id="totalPersone">1</span></p>
-                <p><strong>Camere:</strong> <span id="roomCountsDisplay">-</span></p>
+                <p><strong>Camera:</strong> <span id="roomCountsDisplay">-</span></p>
           </div>
           <div>
             <p class="text-2xl font-bold text-blue-600">
@@ -787,7 +787,7 @@
                 </div>
                 <div class="w-full">
                     <label class="block mb-0.5 font-medium text-sm">Cellulare *</label>
-                    <input type="tel" name="${prefix}_cellulare" id="${prefix}_cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{10}" maxlength="10" title="Inserire un numero di 10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <input type="tel" name="${prefix}_cellulare" id="${prefix}_cellulare" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" required pattern="[0-9]{9,10}" maxlength="10" title="Inserire un numero di 9-10 cifre" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
                 <!-- Contact Information Notice -->
                 <div class="md:col-span-2">
@@ -839,14 +839,13 @@
         let totalCost = 0, totalPeople = 0, costBreakdownHTML = '';
         
         // --- Process Room 1 ---
-        const room1Occupants = [{ age: calculateAge(document.querySelector('[name="data_nascita"]').value), name: "Capogruppo", type: 'capogruppo', form_index: 0 }];
+        const room1Occupants = [{ age: calculateAge(document.querySelector('[name="data_nascita"]').value), name: "Partecipante", type: 'capogruppo', form_index: 0 }];
         document.querySelectorAll('#companionFieldsRoom1 .guest-block').forEach((block, i) => {
             room1Occupants.push({ age: calculateAge(block.querySelector('[name*="data_nascita"]').value), name: `Ospite ${i+1}`, type: 'ospite_room1', form_index: i+1 });
         });
         
         if(room1Occupants.length > 0) {
             totalPeople += room1Occupants.length;
-            costBreakdownHTML += `<p class='font-semibold mt-1 text-blue-700'>Camera:</p>`;
             room1Occupants.forEach((occupant, i) => {
                 let cost = getOccupantCost(occupant.age, i + 1, room1Occupants.length);
                 let label = getOccupantLabel(occupant.age, i + 1, room1Occupants.length);

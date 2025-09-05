@@ -94,7 +94,7 @@ async function generateRegistrationPDF(registrationData, eventName) {
             // Room grouping section
             doc.fontSize(16)
                .font('Helvetica-Bold')
-               .text('COMPOSIZIONE CAMERE', { align: 'center' })
+               .text('COMPOSIZIONE CAMERA', { align: 'center' })
                .moveDown();
 
             // Get all people (capogruppo + guests)
@@ -127,7 +127,6 @@ async function generateRegistrationPDF(registrationData, eventName) {
                 if (personIndex < allPeople.length) {
                     rooms.push({
                         type: 'Camera Singola',
-                        number: i + 1,
                         people: [allPeople[personIndex]]
                     });
                     personIndex++;
@@ -143,7 +142,6 @@ async function generateRegistrationPDF(registrationData, eventName) {
                 }
                 rooms.push({
                     type: 'Camera Doppia',
-                    number: i + 1,
                     people: roomPeople
                 });
             }
@@ -157,7 +155,6 @@ async function generateRegistrationPDF(registrationData, eventName) {
                 }
                 rooms.push({
                     type: 'Camera Tripla',
-                    number: i + 1,
                     people: roomPeople
                 });
             }
@@ -171,7 +168,6 @@ async function generateRegistrationPDF(registrationData, eventName) {
                 }
                 rooms.push({
                     type: 'Camera Quadrupla',
-                    number: i + 1,
                     people: roomPeople
                 });
             }
@@ -208,7 +204,7 @@ async function generateRegistrationPDF(registrationData, eventName) {
                 doc.fontSize(14)
                    .font('Helvetica-Bold')
                    .fillColor('white')
-                   .text(`${room.type} ${room.number}`, 60, y + 2);
+                   .text(`${room.type}`, 60, y + 2);
 
                 doc.fillColor('black').moveDown(0.5);
 
@@ -233,7 +229,7 @@ async function generateRegistrationPDF(registrationData, eventName) {
                     doc.fontSize(12)
                        .font('Helvetica-Bold')
                        .fillColor(isCapogruppo ? '#1e40af' : '#374151')
-                       .text(`${person.nome} ${person.cognome}${isCapogruppo ? ' (Capogruppo)' : ''}`, 70, doc.y + 10);
+                       .text(`${person.nome} ${person.cognome}${isCapogruppo ? ' (Partecipante)' : ''}`, 70, doc.y + 10);
 
                     doc.fontSize(10)
                        .font('Helvetica')
@@ -246,16 +242,6 @@ async function generateRegistrationPDF(registrationData, eventName) {
                     
                     if (person.data_nascita) {
                         doc.text(`Data di nascita: ${person.data_nascita}`, 70, fieldY);
-                        fieldY += 15;
-                    }
-                    
-                    if (person.codice_fiscale) {
-                        doc.text(`Codice fiscale: ${person.codice_fiscale}`, 70, fieldY);
-                        fieldY += 15;
-                    }
-
-                    if (person.indirizzo) {
-                        doc.text(`Indirizzo: ${person.indirizzo}`, 70, fieldY);
                         fieldY += 15;
                     }
 
@@ -304,16 +290,16 @@ async function generateRegistrationPDF(registrationData, eventName) {
                .font('Helvetica');
 
             if (registrationData.camera_singola > 0) {
-                doc.text(`• ${registrationData.camera_singola} Camera/e Singola/e`);
+                doc.text(`• ${registrationData.camera_singola} Camera Singola`);
             }
             if (registrationData.camera_doppia > 0) {
-                doc.text(`• ${registrationData.camera_doppia} Camera/e Doppia/e`);
+                doc.text(`• ${registrationData.camera_doppia} Camera Doppia`);
             }
             if (registrationData.camera_tripla > 0) {
-                doc.text(`• ${registrationData.camera_tripla} Camera/e Tripla/e`);
+                doc.text(`• ${registrationData.camera_tripla} Camera Tripla`);
             }
             if (registrationData.camera_quadrupla > 0) {
-                doc.text(`• ${registrationData.camera_quadrupla} Camera/e Quadrupla/e`);
+                doc.text(`• ${registrationData.camera_quadrupla} Camera Quadrupla`);
             }
 
             doc.moveDown();
