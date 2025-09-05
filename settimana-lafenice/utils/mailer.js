@@ -35,14 +35,7 @@ function createMailer(envConfig) {
             from: `"${envConfig.EMAIL_FROM_NAME}" <${envConfig.EMAIL_FROM_ADDRESS}>`,
             to: to,
             subject: subject,
-            html: html,
-            attachments: [
-                {
-                    filename: 'mae-logo.png',
-                    path: path.join(__dirname, '..', 'assets', 'mae-logo.png'),
-                    cid: 'mae-logo'
-                }
-            ]
+            html: html
         };
 
         try {
