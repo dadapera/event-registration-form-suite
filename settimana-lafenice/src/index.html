@@ -292,7 +292,7 @@
       <div class="pt-6">
         <label class="inline-flex items-center mb-2">
           <input type="checkbox" required class="form-checkbox mr-2">
-          Dichiaro di aver letto e compreso l'informativa ai sensi dell'Art. 13 del Reg. UE 679/2016 *
+          Dichiaro di aver letto e compreso l'<span id="informativa-link" class="text-blue-600 hover:text-blue-800 underline cursor-pointer">informativa</span>  *
         </label>
         <br />
         <label class="inline-flex items-center">
@@ -405,6 +405,47 @@
 
       const togglePricingRulesButton = document.getElementById('togglePricingRulesButton');
       if (togglePricingRulesButton) togglePricingRulesButton.addEventListener('click', togglePricingRules);
+      
+      // Privacy modal event listeners
+      const informativaLink = document.getElementById('informativa-link');
+      const privacyModal = document.getElementById('privacy-modal');
+      const closeModal = document.getElementById('close-modal');
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      
+      if (informativaLink) {
+        informativaLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          privacyModal.classList.remove('hidden');
+        });
+      }
+      
+      if (closeModal) {
+        closeModal.addEventListener('click', function() {
+          privacyModal.classList.add('hidden');
+        });
+      }
+      
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+          privacyModal.classList.add('hidden');
+        });
+      }
+      
+      // Close modal when clicking outside of it
+      if (privacyModal) {
+        privacyModal.addEventListener('click', function(e) {
+          if (e.target === privacyModal) {
+            privacyModal.classList.add('hidden');
+          }
+        });
+      }
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !privacyModal.classList.contains('hidden')) {
+          privacyModal.classList.add('hidden');
+        }
+      });
       
       // Modal event listeners removed since we're now using a success page
     });
@@ -1144,6 +1185,218 @@
   
   
   <!-- Success modal removed - now using dedicated success page -->
+
+  <!-- Privacy Policy Modal -->
+  <div id="privacy-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
+          <h3 class="text-xl font-semibold text-gray-900">Informativa Privacy</h3>
+          <button id="close-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1 min-h-0">
+          <div class="prose max-w-none text-sm leading-relaxed">
+            <h2 class="text-lg font-bold mb-4">INFORMATIVA RELATIVA AL TRATTAMENTO DEI DATI PERSONALI</h2>
+            <p class="mb-2">Ai sensi e dell'art. 13 del GDPR Regolamento UE n. 2016/679</p>
+            <p class="mb-4 font-semibold">Doc. Aggiornato al 29/01/2025</p>
+            
+            <p class="mb-4">
+              La LE MONDE Srl, in qualità di titolare del trattamento ai sensi degli articoli 4, n. 7)
+              e 24 del Regolamento UE 2016/679 del 27/04/2016 relativo alla protezione dei dati
+              personali delle persone fisiche con riguardo al trattamento dei dati personali (di seguito,
+              "GDPR") La informa, ai sensi degli Artt. 13 e 14 del "GDPR" con riferimento ai Suoi
+              Dati Personali richiesti dalla stessa nell'ambito dei servizi di intermediazione di
+              pacchetti turistici intercorrenti, che tale trattamento sarà improntato ai principi di
+              correttezza, liceità e trasparenza e di tutela della Sua riservatezza e dei Suoi diritti. A
+              tal proposito La preghiamo di leggere attentamente la presente Informativa.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">1) Oggetto del Trattamento</h3>
+            <p class="mb-4">
+              Il Titolare del Trattamento tratta i dati personali identificativi in particolare: nome,
+              cognome, codice fiscale, p.iva, e-mail, numero telefonico, indirizzo di residenza, ecc,
+              da Lei comunicati con il presente modulo e quelli ulteriori che avremo assoluta
+              necessità di rilevare in fase precontrattuale e/o contrattuale ovvero all'atto della
+              conclusione di un contratto di servizi. Inoltre, potrebbero essere trattati categorie
+              particolari di dati "c.d. sensibili" relativi allo stato di salute per particolari esigenze
+              alimentari o legate al viaggio/soggiorno.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">2) Finalità del Trattamento e Base Giuridica</h3>
+            <p class="mb-2">I Dati vengono da noi raccolti presso l'interessato con le seguenti finalità:</p>
+            
+            <div class="mb-4">
+              <table class="w-full border-collapse border border-gray-300">
+                <tbody>
+                  <tr>
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.1</strong> la vendita, l'organizzazione e l'intermediazione
+                      nell'acquisto di un pacchetto turistico, biglietteria e
+                      titoli di viaggio organizzato da terzi o di singoli
+                      servizi turistici prestati da terzi fornitori (es. Aziende,
+                      albergatori, vettori, ecc.);
+                    </td>
+                    <td class="border border-gray-300 p-3 text-sm text-gray-600 align-top" rowspan="4">
+                      La base giuridica si fonda
+                      su obblighi contrattuali e/o
+                      precontrattuali sottoscritti
+                      di cui l'interessato è parte.
+                    </td>
+                  </tr>
+                  <tr class="bg-gray-50">
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.2</strong> l'intermediazione nell'acquisto di servizi
+                      finanziari/assicurativi accessori e collegati ai
+                      pacchetti/servizi turistici agevolati o acquistati
+                      singolarmente (polizze sanitarie; bagaglio;
+                      annullamento; assistenza al viaggiatore in difficoltà;
+                      finanziamenti credito al consumo ecc.);
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.3</strong> per adempiere all'incarico relativo al rilascio di
+                      visti e permessi di soggiorno turistici;
+                    </td>
+                  </tr>
+                  <tr class="bg-gray-50">
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.4</strong> per finalità connesse a Obblighi legali:
+                      fatturazione, scritture e registrazioni contabili
+                      obbligatorie, e tutela di credito e tutela dei diritti in
+                      sede giudiziaria.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.5</strong> Solo con esplicito consenso, per Finalità
+                      Promozionali e di Marketing, e informazioni
+                      commerciali circa le opportunità e offerte Turistiche.
+                    </td>
+                    <td class="border border-gray-300 p-3 text-sm text-gray-600">
+                      La base giuridica è il
+                      consenso espresso
+                      dell'interessato.
+                    </td>
+                  </tr>
+                  <tr class="bg-gray-50">
+                    <td class="border border-gray-300 p-3">
+                      <strong>2.6</strong> Solo con Esplicito consenso, trattamento di dati
+                      sulla salute per particolari esigenze alimentari o
+                      disabilità specifiche legate al viaggio/soggiorno e
+                      loro comunicazione a strutture ricettive o vettori.
+                    </td>
+                    <td class="border border-gray-300 p-3 text-sm text-gray-600">
+                      La base giuridica è il
+                      consenso espresso
+                      dell'interessato.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3 class="text-base font-bold mb-2">3) Modalità di Trattamento</h3>
+            <p class="mb-4">
+              I Dati vengono da noi trattati sia manualmente, e la documentazione cartacea relativa
+              verrà da noi correttamente mantenuta e protetta per tutto il tempo necessario al
+              trattamento o prescritto dalla legge, sia a mezzo del ns. sistema informatico, ed in tal
+              caso verranno registrati su supporti informatici protetti.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">4) Natura del conferimento dei dati e conseguenze del rifiuto di rispondere</h3>
+            <p class="mb-4">
+              Si informa che, tenuto conto delle finalità del trattamento come sopra illustrate, per le
+              finalità indicate dal punto 2.1) al punto 2.4) il conferimento dei dati è obbligatorio ed
+              il loro mancato, parziale o inesatto conferimento potrà avere, come conseguenza,
+              l'impossibilità di svolgere l'attività stessa e ci preclude di assolvere gli adempimenti
+              contrattuali come previsti dal contratto di mandato. Per le finalità relative ai punti 2.5
+              e 2.6) il conferimento dei dati è facoltativo, ed il loro mancato conferimento non
+              preclude il rapporto in essere.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">5) Comunicazioni</h3>
+            <p class="mb-2">I Dati raccolti ed elaborati potranno essere:</p>
+            <ul class="list-disc pl-6 mb-4 space-y-1">
+              <li>messi a disposizione dei dipendenti e collaboratori del Titolare, in qualità di
+              Responsabili o Incaricati al trattamento;</li>
+              <li>A persone, società, associazioni o studi professionali che prestino servizi o
+              attività di assistenza e consulenza a favore della Società al fine di tutelare un
+              proprio diritto (ad esempio, commercialisti, avvocati, consulenti fiscali, revisori
+              contabili, consulenti nell'ambito di operazioni di auditing o due diligence, etc.);
+              Tali soggetti opereranno in qualità di Responsabili esterni del trattamento
+              impartendo loro adeguate istruzioni operative;</li>
+              <li>A fornitori della società e, in particolare, ai fornitori di servizi turistici inclusi
+              nei pacchetti venduti;</li>
+              <li>Alle Compagnie di assicurazione che prestano le coperture accessorie e collegate
+              con i pacchetti e servizi turistici acquistati;</li>
+              <li>A soggetti cui la facoltà di accedere ai Suoi dati sia riconosciuta da disposizioni
+              di legge e di normativa secondaria o da disposizioni impartite da Autorità a ciò
+              legittimate dalla legge, fra cui le autorità aeroportuali, portuali, doganali e di
+              frontiera.</li>
+            </ul>
+            <p class="mb-4 text-sm">
+              Nella sede legale è disponibile l'elenco completo ed aggiornato dei soggetti ai quali
+              i dati possono essere comunicati.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">6) Tempi di conservazione dei dati e altre informazioni</h3>
+            <p class="mb-4">
+              Il Titolare tratterà i dati personali per il tempo necessario per poter adempiere alle
+              finalità di cui sopra e comunque per non oltre 10 anni dalla cessazione del rapporto
+              per le Finalità di tenuta documenti contabili e fiscali come da legislazione vigente;
+              mentre i dati per le Finalità soggette a consenso esplicito fino alla revoca del
+              consenso espresso. Si informa inoltre che tutti i dati raccolti non saranno comunque
+              oggetto di alcun processo decisionale automatizzato, compresa la profilazione.
+            </p>
+
+            <h3 class="text-base font-bold mb-2">7) Diritti dell'interessato</h3>
+            <p class="mb-2">
+              La informiamo inoltre che, in qualità di Interessato, ai sensi degli articoli da 15 a
+              23 del GDPR, Le conferisce i seguenti specifici diritti:
+            </p>
+            <ul class="list-disc pl-6 mb-4 space-y-1">
+              <li>Chiedere ed ottenere l'indicazione dell'origine dei dati personali, delle finalità e
+              modalità del trattamento nonché della logica applicata, degli estremi
+              identificativi del titolare e dei responsabili, dei soggetti o delle categorie
+              di soggetti ai quali i dati personali possono essere comunicati o che possono
+              venirne a conoscenza;</li>
+              <li>Ottenere l'aggiornamento, la rettificazione o l'integrazione dei dati, la
+              cancellazione, la trasformazione in forma anonima o il blocco dei dati trattati in
+              violazione di legge, l'attestazione che tali operazioni richieste sono state portate
+              a conoscenza di coloro ai quali i dati sono stati comunicati. Ove applicabili, ha
+              altresì i diritti di cui agli artt. 16-21 del GDPR tra cui il Diritto di rettifica, diritto
+              all'oblio, diritto di limitazione di trattamento, diritto alla portabilità dei dati,
+              diritto di opposizione, nonché il diritto di reclamo all'Autorità Garante per la
+              protezione dei dati. L'interessato ha il diritto di revocare il proprio consenso in
+              qualsiasi momento. La revoca del consenso non pregiudica la liceità del
+              trattamento basata sul consenso prima della revoca.</li>
+            </ul>
+            
+            <h4 class="text-sm font-bold mb-2">Modalità di esercizio dei diritti</h4>
+            <p class="mb-4">
+              Potrà in qualsiasi momento esercitare i suoi diritti inviando una comunicazione
+              agli indirizzi e con le modalità sotto riportate:
+            </p>
+
+            <h3 class="text-base font-bold mb-2">8) Titolare del Trattamento</h3>
+            <p class="mb-4">
+              La informiamo che il Titolare del Trattamento dei dati è la scrivente "Le Monde
+              srl, con sede legale in Via Liberazione, 150 – 63074 – San Benedetto del Tronto
+              (AP),
+              <br>
+              Tel: (+39) 0735.751346 - Email: info@maeviaggi.it - PEC: maegroup@tdpec.it
+            </p>
+          </div>
+        </div>
+        <div class="flex justify-end p-6 border-t border-gray-200 flex-shrink-0">
+          <button id="close-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded">
+            Chiudi
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
