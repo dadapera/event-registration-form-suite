@@ -109,7 +109,7 @@
               <p class="text-sm text-gray-600 italic mb-1">Queste informazioni saranno utilizzate solo per garantire un servizio adeguato. *</p>
               <div class="flex items-center gap-4 text-sm">
                 <label class="inline-flex items-center gap-2">
-                  <input type="radio" name="consenso_dati_alimentari" id="consenso_dati_alimentari_si" value="si" class="h-4 w-4">
+                  <input type="radio" name="consenso_dati_alimentari" id="consenso_dati_alimentari_si" value="si" class="h-4 w-4" checked>
                   <span>Acconsento al trattamento dei miei dati alimentari</span>
                 </label>
                 <label class="inline-flex items-center gap-2">
@@ -526,7 +526,8 @@
                 data_nascita: formData.get(`${prefix}_data_nascita`), 
                 luogo_nascita: formData.get(`${prefix}_luogo_nascita`), 
                 cittadinanza: formData.get(`${prefix}_cittadinanza`),
-                esigenze_alimentari: formData.get(`${prefix}_esigenze_alimentari`) || ''
+                esigenze_alimentari: formData.get(`${prefix}_esigenze_alimentari`) || '',
+                consenso_dati_alimentari: formData.get(`${prefix}_consenso_dati_alimentari`) || null
             };
             
                          // Additional data only for guest #1
@@ -546,6 +547,7 @@
             data_nascita: data.data_nascita,
             luogo_nascita: data.luogo_nascita, cittadinanza: data.cittadinanza,
             esigenze_alimentari: data.esigenze_alimentari || '',
+            consenso_dati_alimentari: data.consenso_dati_alimentari || null,
             evento: config.eventName || 'Evento',
             agente: data.agente_riferimento,
             ...calculatedRoomCounts,
@@ -859,7 +861,7 @@
                         <p class="text-sm text-gray-600 italic mb-1">Queste informazioni saranno utilizzate solo per garantire un servizio adeguato. *</p>
                         <div class="flex items-center gap-4 text-sm">
                             <label class="inline-flex items-center gap-2">
-                                <input type="radio" name="${prefix}_consenso_dati_alimentari" id="${prefix}_consenso_dati_alimentari_si" value="si" class="h-4 w-4">
+                                <input type="radio" name="${prefix}_consenso_dati_alimentari" id="${prefix}_consenso_dati_alimentari_si" value="si" class="h-4 w-4" checked>
                                 <span>Acconsento al trattamento dei miei dati alimentari</span>
                             </label>
                             <label class="inline-flex items-center gap-2">

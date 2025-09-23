@@ -262,10 +262,11 @@
         if (hasGuests) {
           table += `<span id="expand-icon-${reg.id}" class="mr-2">▶</span>`;
         }
-                 table += `${reg.id}</td>`;
-         table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
-         table += `<td class="px-2 py-1 border-b">${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${reg.luogo_nascita || '-'}<br>${reg.cittadinanza || '-'}${reg.esigenze_alimentari ? `<br>${reg.esigenze_alimentari}` : ''}</td>`;
-         table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
+        table += `${reg.id}</td>`;
+        table += `<td class="px-2 py-1 border-b font-medium">${reg.nome} ${reg.cognome}</td>`;
+        const consensoText = reg.consenso_dati_alimentari ? (reg.consenso_dati_alimentari.toLowerCase() === 'si' || reg.consenso_dati_alimentari.toLowerCase() === 'sì' ? 'Consenso dati alimentari: Sì' : 'Consenso dati alimentari: No') : '';
+        table += `<td class="px-2 py-1 border-b">${reg.data_nascita ? new Date(reg.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${reg.luogo_nascita || '-'}<br>${reg.cittadinanza || '-'}${reg.esigenze_alimentari ? `<br>${reg.esigenze_alimentari}` : ''}${consensoText ? `<br>${consensoText}` : ''}</td>`;
+        table += `<td class="px-2 py-1 border-b">${reg.email}<br>${reg.cellulare}</td>`;
         table += `<td class="px-2 py-1 border-b">${reg.agente || '-'}</td>`;
         
         // Room info
@@ -318,7 +319,8 @@
           table += `<tr class="guest-row guest-${reg.id} bg-blue-25 hidden">`;
                      table += `<td class="px-2 py-1 border-b pl-8 text-sm text-gray-600">${guestIndex + 1}</td>`;
            table += `<td class="px-2 py-1 border-b font-medium text-sm">${guest.nome} ${guest.cognome}</td>`;
-           table += `<td class="px-2 py-1 border-b text-sm">${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${guest.luogo_nascita || '-'}<br>${guest.cittadinanza || '-'}${guest.esigenze_alimentari ? `<br>${guest.esigenze_alimentari}` : ''}</td>`;
+           const guestConsensoText = guest.consenso_dati_alimentari ? (guest.consenso_dati_alimentari.toLowerCase() === 'si' || guest.consenso_dati_alimentari.toLowerCase() === 'sì' ? 'Consenso: Sì' : 'Consenso: No') : '';
+           table += `<td class="px-2 py-1 border-b text-sm">${guest.data_nascita ? new Date(guest.data_nascita).toLocaleDateString('it-IT') : '-'}<br>${guest.luogo_nascita || '-'}<br>${guest.cittadinanza || '-'}${guest.esigenze_alimentari ? `<br>${guest.esigenze_alimentari}` : ''}${guestConsensoText ? `<br>${guestConsensoText}` : ''}</td>`;
            table += `<td class="px-2 py-1 border-b text-sm">${guest.email ? `${guest.email}<br>${guest.cellulare || ''}` : '-'}</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;
           table += `<td class="px-2 py-1 border-b text-sm">-</td>`;

@@ -60,6 +60,7 @@ async function createTables(pool, instanceName) {
             via_e_numero_civico TEXT, cap TEXT, citta TEXT, provincia TEXT,
             indirizzo TEXT, codice_fiscale TEXT, luogo_nascita TEXT, cittadinanza TEXT,
             esigenze_alimentari TEXT,
+            consenso_dati_alimentari TEXT,
             camera_singola INTEGER DEFAULT 0, camera_doppia INTEGER DEFAULT 0,
             camera_tripla INTEGER DEFAULT 0, camera_quadrupla INTEGER DEFAULT 0,
             costo_totale_gruppo REAL, evento TEXT, data_iscrizione TEXT,
@@ -72,6 +73,7 @@ async function createTables(pool, instanceName) {
             registrazione_id INTEGER, nome TEXT, cognome TEXT, data_nascita TEXT,
             indirizzo TEXT, codice_fiscale TEXT, luogo_nascita TEXT, cittadinanza TEXT,
             email TEXT, cellulare TEXT, esigenze_alimentari TEXT,
+            consenso_dati_alimentari TEXT,
             FOREIGN KEY(registrazione_id) REFERENCES registrazioni(id) ON DELETE CASCADE
         )`);
 
@@ -96,6 +98,7 @@ async function createTables(pool, instanceName) {
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS luogo_nascita TEXT`);
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS cittadinanza TEXT`);
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS esigenze_alimentari TEXT`);
+            await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS consenso_dati_alimentari TEXT`);
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS via_e_numero_civico TEXT`);
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS cap TEXT`);
             await pool.query(`ALTER TABLE registrazioni ADD COLUMN IF NOT EXISTS citta TEXT`);
@@ -107,6 +110,7 @@ async function createTables(pool, instanceName) {
             await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS email TEXT`);
             await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS cellulare TEXT`);
             await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS esigenze_alimentari TEXT`);
+            await pool.query(`ALTER TABLE accompagnatori_dettagli ADD COLUMN IF NOT EXISTS consenso_dati_alimentari TEXT`);
             
             await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_nome TEXT`);
             await pool.query(`ALTER TABLE dati_fatturazione ADD COLUMN IF NOT EXISTS fattura_cognome TEXT`);
@@ -615,9 +619,9 @@ module.exports = function(pool, instanceName, config) {
             costo_totale_gruppo,
             ospiti,
             tipo_fatturazione,
-            fatturazione_aziendale,
             dati_fatturazione,
-            agente
+            agente,
+            consenso_dati_alimentari
         } = req.body;
 
         try {
@@ -647,17 +651,17 @@ module.exports = function(pool, instanceName, config) {
                     INSERT INTO registrazioni (
                         user_id, nome, cognome, email, cellulare, data_nascita, 
                         via_e_numero_civico, cap, citta, provincia, indirizzo, codice_fiscale,
-                        luogo_nascita, cittadinanza, esigenze_alimentari, evento, 
+                        luogo_nascita, cittadinanza, esigenze_alimentari, consenso_dati_alimentari, evento, 
                         camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
                         costo_totale_gruppo, data_iscrizione, fatturazione_aziendale, agente
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
                     RETURNING id
                 `;
                 
                 const mainInsertResult = await client.query(mainInsertQuery, [
                     user_id, nome, cognome, email, cellulare, data_nascita, 
                     via_e_numero_civico, cap, citta, provincia, indirizzo, codice_fiscale,
-                    luogo_nascita, cittadinanza, esigenze_alimentari || '', evento, 
+                    luogo_nascita, cittadinanza, esigenze_alimentari || '', consenso_dati_alimentari || 'no', evento, 
                     camera_singola, camera_doppia, camera_tripla, camera_quadrupla,
                     costo_totale_gruppo, new Date().toISOString(), 
                     tipo_fatturazione === 'azienda', agente
@@ -670,8 +674,8 @@ module.exports = function(pool, instanceName, config) {
                     const ospiteQuery = `
                         INSERT INTO accompagnatori_dettagli (
                             registrazione_id, nome, cognome, data_nascita, indirizzo, codice_fiscale, 
-                            luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                            luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari, consenso_dati_alimentari
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                     `;
                     
                     for (const ospite of ospiti) {
@@ -680,7 +684,7 @@ module.exports = function(pool, instanceName, config) {
                             ospite.data_nascita, ospite.indirizzo, ospite.codice_fiscale,
                             ospite.luogo_nascita, ospite.cittadinanza,
                             ospite.email || null, ospite.cellulare || null, 
-                            ospite.esigenze_alimentari || ''
+                            ospite.esigenze_alimentari || '', ospite.consenso_dati_alimentari || 'no'
                         ]);
                     }
                 }
@@ -761,7 +765,7 @@ module.exports = function(pool, instanceName, config) {
                         };
                     }
 
-                    const emailContent = generateSummaryHTML(emailData);
+                const emailContent = generateSummaryHTML(emailData);
 
                     // Send email to both user and monitoring email
                     const recipients = [email];
@@ -822,7 +826,7 @@ module.exports = function(pool, instanceName, config) {
                 SELECT 
                     r.id, r.nome, r.cognome, r.email, r.cellulare, r.data_nascita, 
                     r.via_e_numero_civico, r.cap, r.citta, r.provincia, r.indirizzo, 
-                    r.codice_fiscale, r.luogo_nascita, r.cittadinanza, r.esigenze_alimentari, r.evento, 
+                    r.codice_fiscale, r.luogo_nascita, r.cittadinanza, r.esigenze_alimentari, r.consenso_dati_alimentari, r.evento, 
                     r.camera_singola, r.camera_doppia, r.camera_tripla, r.camera_quadrupla,
                     r.costo_totale_gruppo, r.data_iscrizione, r.fatturazione_aziendale, r.agente,
                     'Capogruppo' as tipo_persona, r.id as registrazione_id,
@@ -840,7 +844,7 @@ module.exports = function(pool, instanceName, config) {
                     ad.id, ad.nome, ad.cognome, ad.email, ad.cellulare, 
                     ad.data_nascita, NULL as via_e_numero_civico, NULL as cap, NULL as citta, NULL as provincia,
                     ad.indirizzo, ad.codice_fiscale, ad.luogo_nascita, ad.cittadinanza, ad.esigenze_alimentari,
-                    r.evento,
+                    ad.consenso_dati_alimentari, r.evento,
                     0 as camera_singola, 0 as camera_doppia, 0 as camera_tripla, 0 as camera_quadrupla,
                     0 as costo_totale_gruppo, NULL as data_iscrizione, false as fatturazione_aziendale, NULL as agente,
                     'Ospite' as tipo_persona, ad.registrazione_id,
@@ -890,9 +894,9 @@ module.exports = function(pool, instanceName, config) {
             const registrationsResult = await pool.query(registrationQuery);
             const registrations = registrationsResult.rows;
 
-            const guestsQuery = `
+        const guestsQuery = `
                 SELECT registrazione_id, nome, cognome, data_nascita, codice_fiscale, indirizzo,
-                        luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari
+                        luogo_nascita, cittadinanza, email, cellulare, esigenze_alimentari, consenso_dati_alimentari
                 FROM accompagnatori_dettagli
                 ORDER BY registrazione_id, id
             `;
@@ -910,13 +914,13 @@ module.exports = function(pool, instanceName, config) {
         }, {});
 
         // Generate CSV content
-        let csvContent = 'ID,Nome,Cognome,Email,Cellulare,Data Nascita,Luogo Nascita,Cittadinanza,Esigenze Alimentari,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Agente,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Fattura Nome,Fattura Cognome,Fattura CF,Fattura Indirizzo\n';
+        let csvContent = 'ID,Nome,Cognome,Email,Cellulare,Data Nascita,Luogo Nascita,Cittadinanza,Esigenze Alimentari,Consenso Dati Alimentari,Camera Singola,Camera Doppia,Camera Tripla,Camera Quadrupla,Costo Totale,Evento,Data Iscrizione,Agente,Ragione Sociale,Partita IVA,Codice Fiscale Azienda,Indirizzo Sede Legale,Codice SDI,PEC Azienda,Fattura Nome,Fattura Cognome,Fattura CF,Fattura Indirizzo\n';
 
         registrations.forEach(reg => {
             const ospiti = guestsByRegistration[reg.id] || [];
             
             // Add capogruppo row
-            const capogruppoRow = [
+                const capogruppoRow = [
                 reg.id,
                 `"${reg.nome}"`,
                 `"${reg.cognome}"`,
@@ -926,6 +930,7 @@ module.exports = function(pool, instanceName, config) {
                 `"${reg.luogo_nascita || ''}"`,
                 `"${reg.cittadinanza || ''}"`,
                 `"${reg.esigenze_alimentari || ''}"`,
+                    `"${(reg.consenso_dati_alimentari === 'si') ? 'Si' : 'No'}"`,
                 reg.camera_singola,
                 reg.camera_doppia,
                 reg.camera_tripla,
@@ -960,6 +965,7 @@ module.exports = function(pool, instanceName, config) {
                     `"${guest.luogo_nascita || ''}"`,
                     `"${guest.cittadinanza || ''}"`,
                     `"${guest.esigenze_alimentari || ''}"`,
+                    `"${(guest.consenso_dati_alimentari === 'si') ? 'Si' : 'No'}"`,
                     '', // Camera info only on capogruppo row
                     '',
                     '',
