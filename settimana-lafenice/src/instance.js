@@ -763,7 +763,15 @@ module.exports = function(pool, instanceName, config) {
 
                     const emailContent = generateSummaryHTML(emailData);
 
-                    await sendMail(email, `Conferma Iscrizione - ${evento}`, emailContent);
+                    // Send email to both user and monitoring email
+                    const recipients = [email];
+                    if (config.monitoringEmails) {
+                        recipients.push(...config.monitoringEmails);
+                    }
+
+                    for (const recipient of recipients) {
+                        await sendMail(recipient, `${emailData.nome} ${emailData.cognome} - Conferma Iscrizione - ${evento}`, emailContent);
+                    }
 
                     log('INFO', `Confirmation email sent for '${instanceName}'`, { email, evento });
                 } catch (emailError) {

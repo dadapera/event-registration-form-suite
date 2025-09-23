@@ -105,6 +105,26 @@
           <div class="md:col-span-2 mt-4">
             <label class="block mb-0.5 font-medium text-sm">Esigenze Alimentari</label>
             <textarea name="esigenze_alimentari" id="esigenze_alimentari" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" rows="3" placeholder="Specificare eventuali allergie o intolleranze alimentari"></textarea>
+            <div class="mt-2">
+              <p class="text-sm text-gray-600 italic mb-1">Queste informazioni saranno utilizzate solo per garantire un servizio adeguato. *</p>
+              <div class="flex items-center gap-4 text-sm">
+                <label class="inline-flex items-center gap-2">
+                  <input type="radio" name="consenso_dati_alimentari" id="consenso_dati_alimentari_si" value="si" class="h-4 w-4">
+                  <span>Acconsento al trattamento dei miei dati alimentari</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                  <input type="radio" name="consenso_dati_alimentari" id="consenso_dati_alimentari_no" value="no" class="h-4 w-4">
+                  <span>Non acconsento</span>
+                </label>
+              </div>
+              <div class="mt-2">
+                <br/>
+                <label class="inline-flex items-center text-sm">
+                  <input type="checkbox" required class="form-checkbox mr-2">
+                  Dichiaro di aver letto e compreso l'<span class="text-blue-600 hover:text-blue-800 underline cursor-pointer" onclick="document.getElementById('privacy-modal').classList.remove('hidden')">informativa</span> *
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -290,21 +310,6 @@
       </section>
 
       <div class="pt-6">
-        <label class="inline-flex items-center mb-2">
-          <input type="checkbox" required class="form-checkbox mr-2">
-          Dichiaro di aver letto e compreso l'<span id="informativa-link" class="text-blue-600 hover:text-blue-800 underline cursor-pointer">informativa</span>  *
-        </label>
-        <br />
-        <label class="inline-flex items-center mb-2">
-          <input type="checkbox" class="form-checkbox mr-2">
-          Autorizzo il trattamento dei dati relativi alle intolleranze alimentari *
-        </label>
-        <br />
-        <label class="inline-flex items-center mb-2">
-          <input type="checkbox" class="form-checkbox mr-2">
-          Autorizzo la realizzazione e l'utilizzo di foto e video durante l'evento *
-        </label>
-        <br />
         <label class="inline-flex items-center mb-2">
           <input type="checkbox" required class="form-checkbox mr-2">
           Confermo la veridicità e la correttezza dei dati inseriti e mi assumo la personale responsabilità di quanto scritto *
@@ -850,6 +855,26 @@
                 <div class="md:col-span-2">
                     <label class="block mb-0.5 font-medium text-sm">Esigenze Alimentari</label>
                     <textarea name="${prefix}_esigenze_alimentari" id="${prefix}_esigenze_alimentari" class="w-full border border-gray-300 py-1 px-2 rounded text-sm" rows="3" placeholder="Specificare eventuali allergie o intolleranze alimentari"></textarea>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-600 italic mb-1">Queste informazioni saranno utilizzate solo per garantire un servizio adeguato. *</p>
+                        <div class="flex items-center gap-4 text-sm">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="${prefix}_consenso_dati_alimentari" id="${prefix}_consenso_dati_alimentari_si" value="si" class="h-4 w-4">
+                                <span>Acconsento al trattamento dei miei dati alimentari</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="${prefix}_consenso_dati_alimentari" id="${prefix}_consenso_dati_alimentari_no" value="no" class="h-4 w-4">
+                                <span>Non acconsento</span>
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <br />
+                            <label class="inline-flex items-center text-sm">
+                                <input type="checkbox" required class="form-checkbox mr-2">
+                                Dichiaro di aver letto e compreso l'<span class="text-blue-600 hover:text-blue-800 underline cursor-pointer" onclick="document.getElementById('privacy-modal').classList.remove('hidden')">informativa</span> *
+                            </label>
+                        </div>
+                    </div>
                 </div>`;
         
         return `

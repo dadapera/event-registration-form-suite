@@ -25,29 +25,33 @@ function createMailer(envConfig) {
 
     /**
      * Sends an email using the configured transporter
-     * @param {string} to - Recipient's email address
+     * @param {string|string[]} to - Recipient's email address(es) - can be a single email or array of emails
      * @param {string} subject - Email subject
      * @param {string} html - HTML body of the email
      * @returns {Promise<boolean>} - True if email was sent successfully, false otherwise
      */
     async function sendMail(to, subject, html) {
+        // Convert single email to array for consistent handling
+        const recipients = Array.isArray(to) ? to : [to];
+        const recipientString = recipients.join(', ');
+
         const mailOptions = {
             from: `"${envConfig.EMAIL_FROM_NAME}" <${envConfig.EMAIL_FROM_ADDRESS}>`,
-            to: to,
+            to: recipientString,
             subject: subject,
             html: html
         };
 
         try {
             const info = await transporter.sendMail(mailOptions);
-            log('INFO', `Email sent successfully to ${to}`, { 
+            log('INFO', `Email sent successfully to ${recipientString}`, { 
                 messageId: info.messageId,
                 fromName: envConfig.EMAIL_FROM_NAME,
                 fromAddress: envConfig.EMAIL_FROM_ADDRESS
             });
             return true;
         } catch (error) {
-            log('ERROR', `Failed to send email to ${to}`, { 
+            log('ERROR', `Failed to send email to ${recipientString}`, { 
                 error: error.message,
                 smtpHost: envConfig.SMTP_HOST,
                 smtpPort: envConfig.SMTP_PORT
